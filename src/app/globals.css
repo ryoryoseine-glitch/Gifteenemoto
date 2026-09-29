@@ -1,0 +1,240 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-noto), "Hiragino Kaku Gothic ProN", "Hiragino Sans", system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-orange: var(--orange);
+  --color-cta: var(--cta);
+  --color-cta-foreground: var(--cta-foreground);
+  --color-link: var(--link);
+  --color-orange-soft: var(--orange-soft);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-live: var(--live);
+  --color-page: var(--page);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* giftee / e街 に寄せたトークン */
+  --page: #f5f6f7;
+  --background: #f5f6f7;
+  --foreground: #232323;
+  --card: #ffffff;
+  --card-foreground: #232323;
+  --popover: #ffffff;
+  --popover-foreground: #232323;
+  --primary: #2c5b84;
+  --primary-foreground: #ffffff;
+  --secondary: #eef3f8;
+  --secondary-foreground: #1f4666;
+  --muted: #f2f3f4;
+  --muted-foreground: #6b6f75;
+  --accent: #e3eff7;
+  --accent-foreground: #1f4666;
+  --destructive: #c94a3a;
+  --border: #e4e6e8;
+  --input: #d9dcdf;
+  --ring: #2c5b84;
+  --brand: #2c5b84;
+  --brand-soft: #e3eff7;
+  --orange: #e0612f;
+  --cta: #dc7f68;
+  --cta-foreground: #ffffff;
+  --link: #3f7fb5;
+  --orange-soft: #fdf1ec;
+  --up: #2f7d4f;
+  --down: #c24a3a;
+  --live: #2f9e5b;
+  /* グラフ：validate_palette で light 面に対して確認済み */
+  --chart-1: #2b6cb0;
+  --chart-2: #e0612f;
+  --chart-prev: #b4bcc5;
+  --chart-track: #eef1f4;
+  --chart-grid: #eceef0;
+  --chart-3: #7a9cc0;
+  --chart-4: #a9bfd6;
+  --chart-5: #d4dfeb;
+  --radius: 0.5rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #232323;
+  --sidebar-primary: #2c5b84;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e3eff7;
+  --sidebar-accent-foreground: #1f4666;
+  --sidebar-border: #e4e6e8;
+  --sidebar-ring: #2c5b84;
+}
+
+.dark {
+  --page: #141516;
+  --background: #141516;
+  --foreground: #ececec;
+  --card: #1c1d1f;
+  --card-foreground: #ececec;
+  --popover: #232427;
+  --popover-foreground: #ececec;
+  --primary: #6e9ecb;
+  --primary-foreground: #0f1b26;
+  --secondary: #1f2a35;
+  --secondary-foreground: #cfe0f0;
+  --muted: #232427;
+  --muted-foreground: #9a9ea4;
+  --accent: #1e2f3e;
+  --accent-foreground: #cfe0f0;
+  --destructive: #e07a6c;
+  --border: #2e3033;
+  --input: #3a3d41;
+  --ring: #6e9ecb;
+  --brand: #8fb8de;
+  --brand-soft: #1e2f3e;
+  --orange: #f08a60;
+  --cta: #e08c76;
+  --cta-foreground: #1a1210;
+  --link: #7fb2e0;
+  --orange-soft: #33251f;
+  --up: #6bbe88;
+  --down: #e58a7c;
+  --live: #5fc488;
+  /* グラフ：validate_palette で dark 面に対して確認済み */
+  --chart-1: #4a88c7;
+  --chart-2: #d8683d;
+  --chart-prev: #5a6068;
+  --chart-track: #26282b;
+  --chart-grid: #2a2c2f;
+  --chart-3: #3f6a94;
+  --chart-4: #34506c;
+  --chart-5: #2a3b4d;
+  --sidebar: #1c1d1f;
+  --sidebar-foreground: #ececec;
+  --sidebar-primary: #6e9ecb;
+  --sidebar-primary-foreground: #0f1b26;
+  --sidebar-accent: #1e2f3e;
+  --sidebar-accent-foreground: #cfe0f0;
+  --sidebar-border: #2e3033;
+  --sidebar-ring: #6e9ecb;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+@layer base {
+  body {
+    font-feature-settings: "palt" 0;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes flash-in {
+  0% { background-color: var(--orange-soft); }
+  100% { background-color: transparent; }
+}
+.flash-in {
+  animation: flash-in 2.4s ease-out;
+}
+
+/* ギフトがひらく動き */
+@keyframes gift-open {
+  0% { transform: perspective(900px) rotateY(-100deg) scale(0.85); opacity: 0; }
+  60% { transform: perspective(900px) rotateY(8deg) scale(1.02); opacity: 1; }
+  100% { transform: perspective(900px) rotateY(0) scale(1); opacity: 1; }
+}
+.gift-open { animation: gift-open 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes gift-wiggle {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-3deg); }
+  40% { transform: rotate(3deg); }
+  60% { transform: rotate(-2deg); }
+  80% { transform: rotate(1deg); }
+}
+.gift-wiggle { animation: gift-wiggle 1.6s ease-in-out 0.4s infinite; }
+
+@keyframes stamp {
+  0% { transform: scale(2.4) rotate(-18deg); opacity: 0; }
+  60% { transform: scale(0.92) rotate(-12deg); opacity: 1; }
+  100% { transform: scale(1) rotate(-12deg); opacity: 1; }
+}
+.stamp { animation: stamp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.sheet-up { animation: sheet-up 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes rise {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.rise { animation: rise 0.5s ease-out both; }
+
+/* 社内共有：ページがめくれる */
+@keyframes page-turn {
+  0% { transform: perspective(1600px) rotateY(-75deg); opacity: 0.2; box-shadow: 40px 0 60px rgba(0,0,0,0.35); }
+  100% { transform: perspective(1600px) rotateY(0); opacity: 1; box-shadow: 0 0 0 rgba(0,0,0,0); }
+}
+.page-turn { transform-origin: left center; animation: page-turn 0.9s cubic-bezier(0.25, 0.8, 0.25, 1) both; }
+
+@keyframes slow-zoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+.slow-zoom { animation: slow-zoom 5s ease-out both; }

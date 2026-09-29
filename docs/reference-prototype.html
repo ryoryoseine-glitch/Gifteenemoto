@@ -1,0 +1,675 @@
+<title>寄付ギフト UIプロトタイプ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+:root{
+  --text:#232323; --text2:#555; --muted:#888; --line:#E5E5E5; --line2:#EDEDED;
+  --page:#F6F6F6; --white:#FFFFFF; --panel:#F8F8F8;
+  --navy:#2C5B84; --navy-dark:#1F4666; --blue-light:#E3EFF7; --blue-link:#4A8BC2;
+  --orange:#F26B3C; --orange-soft:#FDF1EC; --green:#3A8F5A; --green-soft:#E6F3EA; --red:#C94A3A;
+  --bar:#8FB3D3; --bar2:#D6E3EE;
+  --shadow:0 1px 3px rgba(0,0,0,.08);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --text:#ECECEC; --text2:#C8C8C8; --muted:#9A9A9A; --line:#3A3A3A; --line2:#303030;
+    --page:#161616; --white:#222222; --panel:#1C1C1C;
+    --navy:#6E9ECB; --navy-dark:#8FB8DE; --blue-light:#1E2F3E; --blue-link:#7FB2E0;
+    --orange:#F58A62; --orange-soft:#33251F; --green:#6BBE88; --green-soft:#1D3325; --red:#E07A6C;
+    --bar:#4E7598; --bar2:#2B3A47;
+    --shadow:0 1px 3px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --text:#ECECEC; --text2:#C8C8C8; --muted:#9A9A9A; --line:#3A3A3A; --line2:#303030;
+  --page:#161616; --white:#222222; --panel:#1C1C1C;
+  --navy:#6E9ECB; --navy-dark:#8FB8DE; --blue-light:#1E2F3E; --blue-link:#7FB2E0;
+  --orange:#F58A62; --orange-soft:#33251F; --green:#6BBE88; --green-soft:#1D3325; --red:#E07A6C;
+  --bar:#4E7598; --bar2:#2B3A47;
+  --shadow:0 1px 3px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--page);color:var(--text);font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN",Arial,sans-serif;font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+input,select,textarea{font:inherit;color:var(--text);background:var(--white);border:1px solid var(--line);border-radius:6px;padding:7px 10px}
+textarea{width:100%;min-height:84px;resize:vertical}
+.num{font-variant-numeric:tabular-nums}
+
+/* top bar */
+.topbar{background:var(--white);border-bottom:1px solid var(--line2);position:sticky;top:env(safe-area-inset-top,0px);z-index:10}
+.topbar .in{max-width:1240px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{font-weight:700;font-size:20px;letter-spacing:-.3px;white-space:nowrap}
+.logo .ast{color:var(--orange);font-weight:400}
+.logo small{font-weight:400;font-size:12px;color:var(--muted);margin-left:6px}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;color:var(--text2);font-size:13px;font-weight:500;padding:7px 12px;border-radius:20px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--blue-light);color:var(--navy);font-weight:700}
+.case{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.note{background:var(--blue-light);color:var(--text2);font-size:12px;padding:6px 16px;text-align:center}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:20px 56px}
+
+/* common parts */
+.card{background:var(--white);border:1px solid var(--line2);border-radius:10px;box-shadow:var(--shadow)}
+.card .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px 0}
+.card .hd h3{margin:0;font-size:14px;font-weight:700}
+.card .bd{padding:12px 18px 16px}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;border-radius:20px;padding:2px 9px;border:1px solid var(--line);color:var(--text2);white-space:nowrap}
+.pill.live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green)}
+.pill.daily::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--white);border-radius:6px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:500}
+.btn.primary{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.orange{background:var(--orange);border-color:var(--orange);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.linkbtn{border:0;background:none;color:var(--blue-link);cursor:pointer;padding:0;font-size:13px}
+.up{color:var(--green)} .down{color:var(--red)}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t th{text-align:left;font-weight:500;color:var(--muted);font-size:12px;padding:8px 10px;border-bottom:1px solid var(--line)}
+table.t td{padding:9px 10px;border-bottom:1px solid var(--line2);vertical-align:middle}
+table.t tr.sel td{background:var(--blue-light)}
+table.t tr.click{cursor:pointer}
+.r{text-align:right}
+.scroll{overflow-x:auto}
+.grid{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g2{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}
+.g21{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media (max-width:900px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g2,.g21{grid-template-columns:1fr}}
+.kpi{padding:14px 16px}
+.kpi .lb{font-size:12px;color:var(--text2);display:flex;justify-content:space-between;gap:6px;align-items:center}
+.kpi .v{font-size:24px;font-weight:700;margin-top:4px;letter-spacing:-.3px}
+.kpi .d{font-size:12px;margin-top:2px}
+.hbar{display:grid;grid-template-columns:minmax(90px,150px) minmax(0,1fr) 64px;gap:10px;align-items:center;font-size:13px;padding:5px 0}
+.hbar .track{height:10px;background:var(--bar2);border-radius:5px;overflow:hidden}
+.hbar .fill{height:100%;background:var(--bar);border-radius:5px}
+.pagehead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.pagehead h1{font-size:20px;margin:0;line-height:1.35}
+.pagehead .sub{font-size:12px;color:var(--muted)}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.toggle{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.toggle button{border:0;background:var(--white);padding:6px 12px;font-size:12px;cursor:pointer;color:var(--text2)}
+.toggle button[aria-pressed="true"]{background:var(--navy);color:#fff}
+
+/* voices */
+.voice{border-bottom:1px solid var(--line2);padding:12px 0;display:flex;gap:12px;align-items:flex-start}
+.voice:last-child{border-bottom:0}
+.voice .av{width:34px;height:34px;border-radius:50%;background:var(--orange-soft);color:var(--orange);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.voice .tx{flex:1;min-width:0}
+.voice .tx p{margin:0 0 4px}
+.voice .meta{font-size:11px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.voice.new{animation:flash 2.4s ease-out}
+@keyframes flash{0%{background:var(--orange-soft)}100%{background:transparent}}
+.like{border:1px solid var(--line);background:var(--white);border-radius:16px;padding:2px 10px;font-size:12px;cursor:pointer}
+.like[aria-pressed="true"]{border-color:var(--orange);color:var(--orange)}
+.hiddenv{opacity:.45}
+
+/* muni layout */
+.mlayout{display:grid;grid-template-columns:200px minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:820px){.mlayout{grid-template-columns:1fr}}
+.snav{background:var(--white);border:1px solid var(--line2);border-radius:10px;padding:8px;position:sticky;top:76px}
+.snav button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:9px 12px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text2)}
+.snav button[aria-current="page"]{background:var(--blue-light);color:var(--navy);font-weight:700}
+.snav .sep{border-top:1px solid var(--line2);margin:8px 4px}
+.snav .cap{font-size:11px;color:var(--muted);padding:4px 12px}
+.funnel{display:flex;gap:6px;align-items:stretch}
+.funnel .st{flex:1;background:var(--panel);border-radius:8px;padding:10px 12px;min-width:0}
+.funnel .st b{display:block;font-size:18px}
+.funnel .st span{font-size:11px;color:var(--muted)}
+.fbar{height:6px;background:var(--bar2);border-radius:3px;margin-top:6px;overflow:hidden}
+.fbar i{display:block;height:100%;background:var(--navy)}
+
+/* settings */
+.qrow{display:grid;grid-template-columns:28px minmax(0,1fr) 120px 80px auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line2)}
+@media (max-width:700px){.qrow{grid-template-columns:28px minmax(0,1fr);}}
+.lock{font-size:11px;color:var(--muted)}
+.switch{position:relative;width:38px;height:22px;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;background:var(--line);border-radius:11px;cursor:pointer;transition:.2s}
+.switch span::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s}
+.switch input:checked+span{background:var(--navy)}
+.switch input:checked+span::after{left:19px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line2)}
+.row:last-child{border-bottom:0}
+.subtabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px;flex-wrap:wrap}
+.subtabs button{border:0;background:none;padding:8px 12px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;font-size:13px}
+.subtabs button[aria-pressed="true"]{color:var(--navy);border-color:var(--navy);font-weight:700}
+
+/* report */
+.doc{background:var(--white);border:1px solid var(--line);border-radius:4px;padding:36px 40px;max-width:760px;margin:0 auto;box-shadow:var(--shadow)}
+.doc h2{font-size:18px;margin:0 0 4px}
+.doc h4{font-size:13px;margin:20px 0 6px;border-left:3px solid var(--navy);padding-left:8px}
+.doc table{width:100%;border-collapse:collapse;font-size:12.5px}
+.doc td,.doc th{border:1px solid var(--line);padding:6px 8px;text-align:left}
+.doc th{background:var(--panel);font-weight:500}
+@media (max-width:700px){.doc{padding:20px}}
+
+/* phone */
+.phonewrap{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:32px;align-items:start}
+@media (max-width:900px){.phonewrap{grid-template-columns:1fr}}
+.explain h2{font-size:20px;margin:0 0 8px;line-height:1.4}
+.explain p,.explain li{color:var(--text2)}
+.phone{width:375px;max-width:100%;margin:0 auto;background:var(--white);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);overflow:hidden}
+.ph-head{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line2);font-size:13px;font-weight:700}
+.ph-head .bk{border:0;background:none;font-size:18px;cursor:pointer;padding:0 4px 0 0}
+.ph-body{min-height:600px;padding:16px}
+.ph-steps{display:flex;gap:4px;margin-bottom:14px}
+.ph-steps i{flex:1;height:3px;border-radius:2px;background:var(--line)}
+.ph-steps i.on{background:var(--orange)}
+.gcard{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;display:flex;gap:12px;align-items:center;cursor:pointer;background:var(--white);width:100%;text-align:left}
+.gcard .ic{width:44px;height:44px;border-radius:8px;background:var(--blue-light);display:grid;place-items:center;font-size:20px;flex:none}
+.gcard .nm{font-weight:700;font-size:13px}
+.gcard .sm{font-size:11px;color:var(--muted)}
+.gcard .left{margin-left:auto;font-size:12px;color:var(--navy);font-weight:700;white-space:nowrap}
+.sponsor{background:var(--orange-soft);border-radius:10px;padding:12px;margin:4px 0 14px;font-size:12px}
+.sponsor b{color:var(--orange)}
+.fld{margin-bottom:14px}
+.fld label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid var(--line);background:var(--white);border-radius:18px;padding:6px 12px;font-size:12px;cursor:pointer}
+.chips button[aria-pressed="true"]{border-color:var(--orange);background:var(--orange-soft);color:var(--orange);font-weight:700}
+.stars{display:flex;gap:6px}
+.stars button{flex:1;border:1px solid var(--line);background:var(--white);border-radius:8px;padding:8px 0;font-size:12px;cursor:pointer}
+.stars button[aria-pressed="true"]{background:var(--orange);border-color:var(--orange);color:#fff}
+.qr{width:180px;height:180px;margin:10px auto;display:grid;grid-template-columns:repeat(9,1fr);gap:2px;padding:10px;background:#fff;border:1px solid #ddd;border-radius:8px}
+.qr i{background:#222;border-radius:1px}
+.qr i.w{background:#fff}
+.bigbtn{display:block;width:100%;border:0;border-radius:24px;padding:12px;font-weight:700;cursor:pointer;background:var(--orange);color:#fff;font-size:14px;margin-top:12px}
+.bigbtn.sub{background:var(--white);color:var(--text);border:1px solid var(--line)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--text);color:var(--page);padding:10px 18px;border-radius:24px;font-size:13px;box-shadow:var(--shadow);z-index:50;max-width:calc(100% - 32px)}
+.share{max-width:720px;margin:0 auto}
+.chart svg{width:100%;height:auto;display:block}
+.legend{display:flex;gap:14px;font-size:11px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:3px;margin-right:4px;vertical-align:middle}
+</style>
+
+<div class="topbar"><div class="in">
+  <div class="logo">giftee<span class="ast">*</span> e街<small>寄付ギフト（プロトタイプ）</small></div>
+  <div class="seg" id="roles" role="group" aria-label="画面の切り替え">
+    <button data-role="phone">受け取る人（スマホ）</button>
+    <button data-role="muni">自治体</button>
+    <button data-role="corp">企業</button>
+    <button data-role="share">社内共有リンク</button>
+  </div>
+  <div class="case"><span>事例</span>
+    <select id="caseSel" aria-label="事例">
+      <option value="matsumoto">松本市（子育て）</option>
+      <option value="sapporo">さっぽろ圏（観光）</option>
+    </select>
+  </div>
+</div></div>
+<div class="note">コンセプトプロトタイプ（非公式）。企業名・数字はすべて仮。スマホで使ってアンケートに答えると、自治体と企業の画面にその場で反映されます。</div>
+<main class="wrap" id="app"></main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ---------------- data (all fictional) ---------------- */
+const CASES = {
+  matsumoto: {
+    muni: '松本市', unitLabel: '世帯', kind: '子育て',
+    projects: [
+      { id:'m1', name:'子育て支援クーポン', goal:'子育て世帯の経済的・精神的負担の軽減', period:'2026年4月〜2027年3月',
+        budget:30000000, issued:2400, received:2112, used:1436, prevMonthUsed:188, thisMonthUsed:214, prevYearUsed:1180,
+        trend:[96,142,188,201,188,214], trendPrev:[80,118,150,166,170,176],
+        breakdown:{ '券種別':[['一時預かり 半日券',612],['ファミリーサポート 1時間券',488],['産後家事支援',231],['病児・病後児保育',94],['休日保育',11]],
+                    '地区別':[['中央地区',412],['南部地区',356],['北部地区',298],['東部地区',221],['西部地区',149]],
+                    '事業者別（上位）':[['保育園A 一時預かり',132],['ファミリーサポートセンター',118],['子育て支援センターB',96],['家事支援事業者C',71],['保育園D 一時預かり',64]] },
+        repeat: 0.46, firstTime: 0.58 },
+      { id:'m2', name:'こそだて支援電子クーポン（物価高騰対応）', goal:'物価高騰下の子育て世帯の生活支援', period:'2025年12月〜2026年3月',
+        budget:98000000, issued:9800, received:9310, used:8820, prevMonthUsed:0, thisMonthUsed:0, prevYearUsed:0,
+        trend:[0,0,0,0,0,0], trendPrev:[0,0,0,0,0,0],
+        breakdown:{ '店舗の業種別':[['スーパー',5120],['ドラッグストア',2210],['衣料品',840],['その他',650]] }, repeat:0.71, firstTime:null, closed:true }
+    ],
+    donors: [ {name:'アルプス電装株式会社', amount:5000000, project:'m1'}, {name:'山麓フーズ株式会社', amount:2000000, project:'m1'} ],
+    reg: [ {label:'使う人', opts:['保護者','祖父母','その他']}, {label:'子どもの人数', opts:['1人','2人','3人以上']}, {label:'いちばん下の子の年齢', opts:['0歳','1歳','2歳','3〜5歳']}, {label:'お住まいの地区', opts:['中央','南部','北部','東部','西部','その他']} ],
+    gifts: [ {ic:'👶', nm:'一時預かり 半日券', sm:'市内の保育園など 42か所', left:'のこり 9枚', sponsored:true},
+             {ic:'🤝', nm:'ファミリーサポート 1時間券', sm:'ファミリーサポートセンター', left:'のこり 20枚'},
+             {ic:'🍳', nm:'産後家事支援 利用券', sm:'家事支援事業者 18社', left:'のこり 6枚'} ],
+    useTarget: '保育園A 一時預かり（中央地区）',
+    questions: [
+      {id:'sat', text:'このクーポンの満足度は？', type:'scale', locked:true, share:true},
+      {id:'add', text:'このクーポンがなかったら、利用していましたか？', type:'choice', opts:['利用した','たぶん利用した','利用しなかった'], locked:true, share:true},
+      {id:'first', text:'このサービスを使うのは初めてですか？', type:'choice', opts:['初めて','2回目以降'], locked:false, share:true},
+      {id:'time', text:'預けている間に、何ができましたか？（複数選択）', type:'multi', opts:['休息','通院','仕事','上の子との時間','用事'], locked:false, share:false},
+      {id:'msg', text:'応援してくれた地元企業や市に、ひとこと', type:'text', locked:true, share:true}
+    ],
+    agg: { sat:[4,9,58,236,322], add:[132,164,333], first:[364,265], time:{'休息':241,'通院':96,'仕事':133,'上の子との時間':152,'用事':188} },
+    voices: [
+      {t:'半日だけでも預けられて、久しぶりに美容院に行けました。気持ちに余裕ができました。', th:'自分の時間が取れた', a:'1歳・中央地区', ago:'12分前', likes:14},
+      {t:'下の子の予防接種のあいだ上の子を見てもらえて助かりました。', th:'通院・用事ができた', a:'2歳・南部地区', ago:'1時間前', likes:9},
+      {t:'地元の会社が応援してくれていると知って、なんだかうれしかったです。', th:'応援への気持ち', a:'0歳・北部地区', ago:'3時間前', likes:21},
+      {t:'初めて一時預かりを使いました。思っていたより気軽でした。', th:'初めて使えた', a:'1歳・東部地区', ago:'昨日', likes:6}
+    ],
+    corp: {name:'アルプス電装株式会社', employees:1200, viewed:312, viewedPrev:241}
+  },
+  sapporo: {
+    muni: '北海道観光機構（さっぽろ圏11市町村）', unitLabel: '件', kind: '観光',
+    projects: [
+      { id:'s1', name:'さっぽろ圏e旅ギフト', goal:'周遊観光の促進による圏域の地域経済活性化', period:'2026年4月〜2027年3月',
+        budget:50000000, issued:3480, received:3402, used:2765, prevMonthUsed:512, thisMonthUsed:604, prevYearUsed:2210,
+        trend:[310,388,512,690,512,604], trendPrev:[260,300,420,580,470,488],
+        breakdown:{ '市町村別':[['札幌市',1438],['小樽市',498],['北広島市',194],['江別市',166],['恵庭市',138],['石狩市',111],['その他の市町村',220]],
+                    '業種別':[['飲食',1134],['宿泊',774],['土産',470],['体験',387]],
+                    '加盟店別（上位）':[['すし店E（小樽市）',96],['ホテルF（札幌市）',88],['温泉G（札幌市）',71],['土産店H（小樽市）',64],['体験工房I（江別市）',41]] },
+        repeat: 0.17, tour: 0.23, firstTime: null }
+    ],
+    donors: [ {name:'北星ロジスティクス株式会社', amount:10000000, project:'s1'} ],
+    reg: [ {label:'同行者の人数', opts:['1人','2人','3〜4人','5人以上']}, {label:'お住まいの都道府県', opts:['北海道','東北','関東','中部・近畿','その他・海外']}, {label:'年代', opts:['20代以下','30代','40代','50代','60代以上']} ],
+    gifts: [ {ic:'🍣', nm:'さっぽろ圏e旅ギフト（飲食）', sm:'11市町村の加盟店 256店', left:'残高 9,000円', sponsored:true},
+             {ic:'♨️', nm:'温泉・体験', sm:'定山渓・小樽ほか', left:'同じ残高で利用可'},
+             {ic:'🎁', nm:'おみやげ', sm:'各市町村の土産店', left:'同じ残高で利用可'} ],
+    useTarget: 'すし店E（小樽市）',
+    questions: [
+      {id:'sat', text:'今回の滞在の満足度は？', type:'scale', locked:true, share:true},
+      {id:'add', text:'このギフトがなかったら、この市町村に来ていましたか？', type:'choice', opts:['来た','たぶん来た','来なかった'], locked:true, share:true},
+      {id:'spend', text:'ギフト以外に使った金額は？', type:'choice', opts:['なし','〜3,000円','〜1万円','1万円以上'], locked:false, share:true},
+      {id:'again', text:'また来たいですか？', type:'scale', locked:false, share:false},
+      {id:'msg', text:'応援してくれた企業や地域に、ひとこと', type:'text', locked:true, share:true}
+    ],
+    agg: { sat:[6,14,102,412,588], add:[410,388,324], spend:[88,312,486,236], again:[5,11,96,398,612] },
+    voices: [
+      {t:'小樽で使えると知って足をのばしました。お寿司がおいしかった。', th:'足をのばした', a:'40代・関東', ago:'8分前', likes:11},
+      {t:'札幌だけのつもりが、恵庭の温泉まで行けました。', th:'足をのばした', a:'30代・中部・近畿', ago:'45分前', likes:7},
+      {t:'企業が観光を応援しているのは面白い仕組みだと思いました。', th:'応援への気持ち', a:'50代・関東', ago:'2時間前', likes:15}
+    ],
+    corp: {name:'北星ロジスティクス株式会社', employees:800, viewed:204, viewedPrev:150}
+  }
+};
+
+/* ---------------- state ---------------- */
+const S = {
+  role: 'phone', caseId: 'matsumoto',
+  muniPage: 'dash', muniProject: null, setTab: 'survey',
+  cmp: 'month', corpProject: null,
+  phoneStep: 0, answers: {}, reg: {}, useCount: 0,
+  reportDonor: 0, reportKind: 'mid', reportNote: {},
+  corpShow: {cards:true, voices:true, places:true, report:true, amount:true, households:true, userate:true, reach:true},
+  flash: null
+};
+function C(){ return CASES[S.caseId]; }
+function P(id){ return C().projects.find(p=>p.id===id) || C().projects[0]; }
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => n.toLocaleString('ja-JP');
+const yen = n => n>=10000 ? (n/10000).toLocaleString('ja-JP')+'万円' : fmt(n)+'円';
+const pct = (a,b) => b ? Math.round(a/b*1000)/10 : 0;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,2600); }
+function delta(cur, prev){ if(!prev) return '<span class="muted">比較なし</span>'; const d=Math.round((cur-prev)/prev*1000)/10; return `<span class="${d>=0?'up':'down'}">${d>=0?'▲':'▼'} ${Math.abs(d)}%</span>`; }
+function hbars(rows, opts={}){ const max=Math.max(...rows.map(r=>r[1]),1); const tot=rows.reduce((a,r)=>a+r[1],0);
+  return rows.map(([k,v])=>`<div class="hbar"><span>${esc(k)}</span><div class="track"><div class="fill" style="width:${v/max*100}%"></div></div><span class="r num">${opts.pct?pct(v,tot)+'%':fmt(v)}</span></div>`).join(''); }
+function spark(cur, prev){ const w=560,h=150,px=34,py=14; const all=[...cur,...prev]; const mx=Math.max(...all,1);
+  const X=i=>px+i*(w-px-10)/(cur.length-1), Y=v=>h-py-(v/mx)*(h-py*2-8);
+  const path=a=>a.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ');
+  const months=['4月','5月','6月','7月','8月','9月'];
+  const ticks=[0,Math.round(mx/2),mx];
+  return `<svg viewBox="0 0 ${w} ${h+18}" role="img" aria-label="月別の利用数">
+    ${ticks.map(t=>`<line x1="${px}" x2="${w-10}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line2)"/><text x="${px-6}" y="${Y(t)+4}" font-size="10" text-anchor="end" fill="var(--muted)">${fmt(t)}</text>`).join('')}
+    <path d="${path(prev)}" fill="none" stroke="var(--bar)" stroke-width="2" stroke-dasharray="4 4"/>
+    <path d="${path(cur)}" fill="none" stroke="var(--navy)" stroke-width="2.5"/>
+    ${cur.map((v,i)=>`<circle cx="${X(i)}" cy="${Y(v)}" r="3" fill="var(--navy)"/>`).join('')}
+    ${months.map((m,i)=>`<text x="${X(i)}" y="${h+12}" font-size="10" text-anchor="middle" fill="var(--muted)">${m}</text>`).join('')}
+  </svg>`; }
+
+/* ---------------- phone ---------------- */
+function renderPhone(){
+  const c=C(), p=c.projects[0], steps=5;
+  let body='';
+  const head = (t, back=true)=>`<div class="ph-head">${back&&S.phoneStep>0?'<button class="bk" data-act="pback" aria-label="戻る">‹</button>':''}${t}</div>`;
+  const bar = `<div class="ph-steps">${Array.from({length:steps},(_,i)=>`<i class="${i<=S.phoneStep?'on':''}"></i>`).join('')}</div>`;
+  if(S.phoneStep===0){
+    body = head('はじめに：利用登録') + `<div class="ph-body">${bar}
+      <p class="small muted" style="margin-top:0">${esc(c.muni)}の${esc(p.name)}です。はじめに、いくつか教えてください。個人が分かる形で企業に伝わることはありません。</p>
+      ${c.reg.map((r,i)=>`<div class="fld"><label>${esc(r.label)}</label><div class="chips">${r.opts.map(o=>`<button data-act="reg" data-k="${i}" data-v="${esc(o)}" aria-pressed="${S.reg[i]===o}">${esc(o)}</button>`).join('')}</div></div>`).join('')}
+      <button class="bigbtn" data-act="pnext" ${Object.keys(S.reg).length<c.reg.length?'disabled style="opacity:.5"':''}>登録してギフトを見る</button></div>`;
+  } else if(S.phoneStep===1){
+    body = head('マイギフト') + `<div class="ph-body">${bar}
+      <div class="small muted">${esc(c.muni)}</div><div style="font-weight:700;margin-bottom:8px">${esc(p.name)}</div>
+      <div class="sponsor"><b>地元企業からの応援ギフト</b><br>このギフトの一部は、地元の企業が応援して届けています。<br><span class="muted">応援企業：${c.donors.map(d=>esc(d.name)).join('、')}</span></div>
+      ${c.gifts.map((g,i)=>`<button class="gcard" data-act="pick" data-i="${i}"><span class="ic">${g.ic}</span><span><span class="nm">${esc(g.nm)}</span><br><span class="sm">${esc(g.sm)}</span></span><span class="left">${esc(g.left)}</span></button>`).join('')}
+    </div>`;
+  } else if(S.phoneStep===2){
+    const qr = Array.from({length:81},(_,i)=>{const r=Math.floor(i/9),cc=i%9; const f=(r<3&&cc<3)||(r<3&&cc>5)||(r>5&&cc<3); const w=((r*7+cc*3+r*cc)%3===0); return `<i class="${f?'':(w?'w':'')}"></i>`;}).join('');
+    body = head('使う') + `<div class="ph-body">${bar}
+      <div style="text-align:center"><div style="font-weight:700">${esc(c.gifts[0].nm)}</div><div class="small muted">${esc(c.useTarget)}</div>
+      <div class="qr">${qr}</div><div class="small muted">お店の人にこの画面を見せてください</div></div>
+      <button class="bigbtn" data-act="redeem">（デモ）お店の人が読み取る</button></div>`;
+  } else if(S.phoneStep===3){
+    body = head('アンケート（1分）') + `<div class="ph-body">${bar}
+      <div class="small" style="background:var(--green-soft);color:var(--green);border-radius:8px;padding:8px 10px;margin-bottom:12px">使用しました（${S.useCount}回目の利用）。よければ感想を教えてください。</div>
+      ${c.questions.map(q=>qInput(q)).join('')}
+      <div class="fld"><label style="font-weight:400"><input type="checkbox" id="pub" ${S.answers.pub!==false?'checked':''}> ひとことを応援企業と市に公開してよい（名前は出ません）</label></div>
+      <button class="bigbtn" data-act="submit">送信する</button></div>`;
+  } else {
+    body = head('ありがとうございました', false) + `<div class="ph-body">${bar}
+      <div style="text-align:center;padding:30px 0 10px"><div style="font-size:40px">💌</div>
+      <p style="font-weight:700;margin:8px 0">あなたの声は、市と応援企業に届きました</p>
+      <p class="small muted">企業の画面をひらくと、いま送ったひとことが表示されています。</p></div>
+      <button class="bigbtn" data-act="goCorp">企業の画面を見る</button>
+      <button class="bigbtn sub" data-act="prestart">もう一度ためす</button></div>`;
+  }
+  return `<div class="phonewrap">
+    <div class="explain">
+      <h2>受け取る人は、登録して、使って、1分で答えるだけ</h2>
+      <p>市のクーポン画面に「地元企業からの応援ギフト」の表示が1つ増えるだけで、使い方は今のままです。</p>
+      <ol>
+        <li><b>利用登録</b>：事業ごとに決めた必須項目（${c.kind==='子育て'?'使う人・子どもの人数・年齢・地区':'同行者・居住地・年代'}）。効果の計算に使う</li>
+        <li><b>マイギフト</b>：応援企業はほかの寄附企業と並べて紹介</li>
+        <li><b>使う</b>：お店で読み取った時点で消し込み。何回目の利用かもここで分かる</li>
+        <li><b>アンケート</b>：設問は自治体が設定画面で決める。鍵つきの2問（満足度・なければ使わなかったか）はどの事業でも共通</li>
+        <li><b>お礼</b>：公開に同意したひとことは、その場で企業の画面に届く</li>
+      </ol>
+      <p class="small muted">※ 設問は「自治体 → 設定 → アンケート」で変えると、ここにすぐ反映されます。</p>
+    </div>
+    <div class="phone">${body}</div></div>`;
+}
+function qInput(q){
+  const a=S.answers[q.id];
+  if(q.type==='scale') return `<div class="fld"><label>${esc(q.text)}</label><div class="stars">${[1,2,3,4,5].map(n=>`<button data-act="ans" data-q="${q.id}" data-v="${n}" aria-pressed="${a==n}">${n}</button>`).join('')}</div><div class="small muted" style="display:flex;justify-content:space-between"><span>不満</span><span>満足</span></div></div>`;
+  if(q.type==='choice') return `<div class="fld"><label>${esc(q.text)}</label><div class="chips">${q.opts.map(o=>`<button data-act="ans" data-q="${q.id}" data-v="${esc(o)}" aria-pressed="${a===o}">${esc(o)}</button>`).join('')}</div></div>`;
+  if(q.type==='multi') return `<div class="fld"><label>${esc(q.text)}</label><div class="chips">${q.opts.map(o=>`<button data-act="ansm" data-q="${q.id}" data-v="${esc(o)}" aria-pressed="${(a||[]).includes(o)}">${esc(o)}</button>`).join('')}</div></div>`;
+  return `<div class="fld"><label>${esc(q.text)}</label><textarea id="q_${q.id}" placeholder="任意">${esc(a||'')}</textarea></div>`;
+}
+
+/* ---------------- muni ---------------- */
+function renderMuni(){
+  const c=C();
+  const nav = `<nav class="snav" aria-label="自治体メニュー">
+    <div class="cap">${esc(c.muni)}</div>
+    <button data-act="mpage" data-p="dash" aria-current="${S.muniPage==='dash'?'page':'false'}">ダッシュボード</button>
+    <button data-act="mpage" data-p="survey" aria-current="${S.muniPage==='survey'?'page':'false'}">アンケートの結果</button>
+    <button data-act="mpage" data-p="report" aria-current="${S.muniPage==='report'?'page':'false'}">報告書の作成</button>
+    <div class="sep"></div>
+    <button data-act="mpage" data-p="settings" aria-current="${S.muniPage==='settings'?'page':'false'}">設定</button>
+  </nav>`;
+  const page = {dash:muniDash, survey:muniSurvey, report:muniReport, settings:muniSettings}[S.muniPage]();
+  return `<div class="mlayout">${nav}<div>${page}</div></div>`;
+}
+function cmpToggle(){ return `<div class="toggle" role="group" aria-label="比較"><button data-act="cmp" data-v="month" aria-pressed="${S.cmp==='month'}">先月比</button><button data-act="cmp" data-v="year" aria-pressed="${S.cmp==='year'}">前年比</button></div>`; }
+function muniDash(){
+  const c=C(); const sel=P(S.muniProject||c.projects[0].id);
+  const rows = c.projects.map(p=>{ const cur=S.cmp==='month'?p.thisMonthUsed:p.used, prev=S.cmp==='month'?p.prevMonthUsed:p.prevYearUsed;
+    return `<tr class="click ${p.id===sel.id?'sel':''}" data-act="mproj" data-id="${p.id}"><td><b>${esc(p.name)}</b><div class="small muted">${esc(p.period)}${p.closed?'・終了':''}</div></td>
+      <td class="r num">${fmt(p.issued)}</td><td class="r num">${pct(p.received,p.issued)}%</td><td class="r num">${pct(p.used,p.received)}%</td>
+      <td class="r num">${p.closed?'<span class="muted">—</span>':delta(cur,prev)}</td>
+      <td class="r num">${(s=>s?yen(s):'<span class="muted">—</span>')(c.donors.filter(d=>d.project===p.id).reduce((a,d)=>a+d.amount,0))}</td></tr>`; }).join('');
+  const b = sel.breakdown; const keys=Object.keys(b);
+  return `<div class="pagehead"><div><h1>ダッシュボード</h1><div class="sub">すべての事業を一覧で。消し込みまでの流れはリアルタイム。</div></div><div class="toolbar">${cmpToggle()}<span class="pill live">リアルタイム</span></div></div>
+  <div class="card"><div class="hd"><h3>事業の一覧</h3><span class="small muted">行を選ぶと下に内訳</span></div><div class="bd scroll">
+    <table class="t"><thead><tr><th>事業</th><th class="r">配布</th><th class="r">受取率</th><th class="r">利用率</th><th class="r">${S.cmp==='month'?'利用（先月比）':'利用（前年比）'}</th><th class="r">企業の寄附</th></tr></thead><tbody>${rows}</tbody></table>
+  </div></div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><div class="hd"><h3>${esc(sel.name)}：配布から利用まで</h3></div><div class="bd">
+      <div class="funnel">
+        <div class="st"><span>配布</span><b class="num">${fmt(sel.issued)}</b><span>${c.unitLabel}</span><div class="fbar"><i style="width:100%"></i></div></div>
+        <div class="st"><span>受取</span><b class="num">${fmt(sel.received)}</b><span>${pct(sel.received,sel.issued)}%</span><div class="fbar"><i style="width:${pct(sel.received,sel.issued)}%"></i></div></div>
+        <div class="st"><span>利用（消し込み）</span><b class="num">${fmt(sel.used)}</b><span>受取の${pct(sel.used,sel.received)}%</span><div class="fbar"><i style="width:${pct(sel.used,sel.issued)}%"></i></div></div>
+        <div class="st"><span>${sel.tour!=null?'周遊（2市町村以上）':'2回以上の利用'}</span><b class="num">${Math.round((sel.tour??sel.repeat)*100)}%</b><span>消し込みから</span><div class="fbar"><i style="width:${(sel.tour??sel.repeat)*100}%"></i></div></div>
+      </div>
+      <div class="chart" style="margin-top:14px">${spark(sel.trend, sel.trendPrev)}<div class="legend"><span><i style="background:var(--navy)"></i>今年度</span><span><i style="background:var(--bar)"></i>前年度</span></div></div>
+    </div></div>
+    <div class="card"><div class="hd"><h3>内訳</h3><select id="bdSel" aria-label="内訳の切り替え">${keys.map(k=>`<option ${k===S.bdKey?'selected':''}>${esc(k)}</option>`).join('')}</select></div><div class="bd">${hbars(b[S.bdKey&&b[S.bdKey]?S.bdKey:keys[0]])}</div></div>
+  </div>`;
+}
+function aggBars(q){
+  const c=C(), a=c.agg[q.id]; if(!a) return '<div class="small muted">まだ回答がありません</div>';
+  if(q.type==='scale'){ const tot=a.reduce((x,y)=>x+y,0); const top2=pct(a[3]+a[4],tot);
+    return `<div class="small" style="margin-bottom:6px">「満足」「やや満足」の合計 <b>${top2}%</b>（観光庁DMOの定義と同じ）・回答 ${fmt(tot)}</div>`+hbars([['5 満足',a[4]],['4',a[3]],['3',a[2]],['2',a[1]],['1 不満',a[0]]],{pct:true}); }
+  if(q.type==='choice') return hbars(q.opts.map((o,i)=>[o,a[i]||0]),{pct:true});
+  if(q.type==='multi') return hbars(Object.entries(a));
+  return '';
+}
+function muniSurvey(){
+  const c=C();
+  const qs = c.questions.filter(q=>q.type!=='text');
+  return `<div class="pagehead"><div><h1>アンケートの結果</h1><div class="sub">${esc(c.projects[0].name)}・設問は「設定 → アンケート」で変更</div></div><span class="pill live">リアルタイム</span></div>
+  <div class="grid g21">${qs.map(q=>`<div class="card"><div class="hd"><h3>${esc(q.text)}</h3>${q.locked?'<span class="lock">🔒 共通設問</span>':''}</div><div class="bd">${aggBars(q)}</div></div>`).join('')}</div>
+  <div class="card" style="margin-top:16px"><div class="hd"><h3>受け取った人の声</h3><span class="small muted">公開に同意したものは企業にその場で共有。不適切なものは非表示に</span></div><div class="bd">
+    ${c.voices.map((v,i)=>`<div class="voice ${v.hidden?'hiddenv':''}"><div class="av">声</div><div class="tx"><p>${esc(v.t)}</p><div class="meta"><span>${esc(v.a)}</span><span>${esc(v.ago)}</span><span>共感 ${v.likes}</span>${v.hidden?'<span class="pill">非表示中</span>':''}</div></div>
+      <button class="btn" data-act="hide" data-i="${i}">${v.hidden?'表示に戻す':'非表示にする'}</button></div>`).join('')}
+  </div></div>`;
+}
+function muniReport(){
+  const c=C(); const d=c.donors[S.reportDonor]||c.donors[0]; const p=P(d.project);
+  const kids=c.kind==='子育て';
+  const satA=c.agg.sat, satT=satA.reduce((x,y)=>x+y,0), top2=pct(satA[3]+satA[4],satT);
+  const addA=c.agg.add, addT=addA.reduce((x,y)=>x+y,0), dead=pct(addA[0],addT), maybe=pct(addA[1],addT), notw=pct(addA[2],addT);
+  const share=d.amount/p.budget; const sharePct=Math.round(share*1000)/10;
+  const respRate=pct(satT,p.used);
+  const key=S.caseId+S.reportDonor+S.reportKind;
+  const isMid=S.reportKind==='mid';
+  // outcomes
+  const firstN = kids ? Math.round(p.used*p.firstTime) : null;
+  const addN = Math.round(p.used*(addA[2]/addT));
+  const timeA = c.agg.time;
+  const spendA = c.agg.spend;
+  const outcomes = kids ? [
+    ['初めてサービスを使った世帯', fmt(firstN)+' 世帯', `利用世帯 ${fmt(p.used)} ×「初めて」${Math.round(p.firstTime*100)}%`, '消し込み × アンケート'],
+    ['クーポンがなければ利用しなかった世帯', fmt(addN)+' 世帯', `利用世帯 ${fmt(p.used)} ×「利用しなかった」${notw}%`, '消し込み × アンケート'],
+    ['預けている間に休息できた', pct(timeA['休息'],satT)+'%', `回答 ${fmt(satT)} のうち ${fmt(timeA['休息'])}`, 'アンケート'],
+    ['2回以上利用した（継続）', Math.round(p.repeat*100)+'%', '同じ世帯の消し込み回数から', '消し込み']
+  ] : [
+    ['2市町村以上をめぐった人', Math.round(p.tour*100)+'%', '同じ利用者の消し込みの市町村数から', '消し込み'],
+    ['ギフトがなければ来なかった利用', fmt(addN)+' 件', `利用 ${fmt(p.used)} ×「来なかった」${notw}%`, '消し込み × アンケート'],
+    ['ギフト以外にも1万円以上使った', pct(spendA[3],spendA.reduce((a,b)=>a+b,0))+'%', 'アンケート', 'アンケート'],
+    ['同じ加盟店で2回以上利用', Math.round(p.repeat*100)+'%', '同じ利用者の消し込みから', '消し込み']
+  ];
+  // voices by theme
+  const vs=c.voices.filter(v=>!v.hidden);
+  const themes={}; vs.forEach(v=>{ const th=v.th||'その他'; (themes[th]=themes[th]||[]).push(v); });
+  // logic model
+  const lm = kids
+    ? [['資源','企業の寄附・市の予算'],['活動','一時預かり等の利用券8券種を配布'],['直接の結果','受取・利用・利用回数'],['初期成果','親が休息や用事の時間を取れた／初めてサービスを使えた'],['中期成果','育児負担・孤立感の軽減'],['長期成果','親が安心して子育てできる']]
+    : [['資源','旅先納税の寄附・企業の寄附'],['活動','11市町村共通の電子商品券を返礼品に'],['直接の結果','利用額・利用率・市町村別の利用'],['初期成果','周遊した／ギフトで来訪した／追加で消費した'],['中期成果','圏域の観光入込客数・観光消費額の増加'],['長期成果','圏域の地域経済の活性化']];
+  const evalTo = 3; // 0-based index up to 初期成果
+  const lmHtml = `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">${lm.map((x,i)=>`<div style="flex:1;min-width:92px;border:1px solid ${i<=evalTo?'var(--navy)':'var(--line)'};background:${i<=evalTo?'var(--blue-light)':'transparent'};border-radius:6px;padding:6px 8px"><div style="font-size:11px;font-weight:700;color:${i<=evalTo?'var(--navy)':'var(--muted)'}">${x[0]}</div><div style="font-size:11.5px;line-height:1.45">${esc(x[1])}</div></div>`).join('')}</div><div class="small muted" style="margin-top:4px">青い枠がこの報告書で測った範囲。中期・長期成果は自治体の既存調査で追う。</div>`;
+  const note = S.reportNote[key]||'';
+  const disclose = `${d.name}は、${c.muni}の「${p.name}」に${yen(d.amount)}を寄附しました（企業版ふるさと納税）。${isMid?'2026年9月末時点で':'事業期間中に'}${fmt(p.used)}${kids?'世帯':'件'}が利用し、${kids?`${fmt(firstN)}世帯が初めて一時預かり等のサービスを利用しました`:`利用者の${Math.round(p.tour*100)}%が2市町村以上をめぐりました`}。利用者の${top2}%が満足と回答しています。`;
+  const tile=(v,l)=>`<div style="flex:1;min-width:120px;border:1px solid var(--line);border-radius:6px;padding:10px 12px"><div style="font-size:20px;font-weight:700" class="num">${v}</div><div class="small muted">${l}</div></div>`;
+  return `<div class="pagehead"><div><h1>報告書の作成</h1><div class="sub">直接の結果と初期成果は自動で入る。背景・考察・次年度の欄は担当課が書く</div></div>
+    <div class="toolbar"><select id="repDonor" aria-label="寄附企業">${c.donors.map((x,i)=>`<option value="${i}" ${i==S.reportDonor?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
+    <div class="toggle"><button data-act="rkind" data-v="mid" aria-pressed="${isMid}">中間</button><button data-act="rkind" data-v="final" aria-pressed="${!isMid}">期末</button></div>
+    <button class="btn" data-act="export" data-v="Word">Word</button><button class="btn" data-act="export" data-v="Excel">Excel</button><button class="btn primary" data-act="export" data-v="PDF">PDF</button></div></div>
+  <div class="doc">
+    <div class="small muted">${isMid?'中間報告（2026年9月末時点）':'期末報告（2027年3月末）'}　／　${esc(c.muni)}</div>
+    <h2>${esc(p.name)}　事業報告書</h2>
+    <div class="small muted">${esc(d.name)} 様</div>
+
+    <h4>ハイライト</h4>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${tile(fmt(p.used)+(kids?' 世帯':' 件'),'利用（消し込み）')}
+      ${kids?tile(fmt(firstN)+' 世帯','初めてサービスを使った'):tile(Math.round(p.tour*100)+'%','2市町村以上をめぐった')}
+      ${tile(notw+'%',kids?'なければ利用しなかった':'なければ来なかった')}
+      ${tile(top2+'%','満足・やや満足')}
+    </div>
+
+    <h4>1. 事業の概要</h4>
+    <table>
+      <tr><th style="width:26%">事業の目標</th><td>${esc(p.goal)}</td></tr>
+      <tr><th>対象</th><td>${kids?'保育園等に在籍していない3歳未満の子の保護者、多子世帯':'さっぽろ圏11市町村を訪れる旅行者（旅先納税の寄附者）'}</td></tr>
+      <tr><th>期間</th><td>${esc(p.period)}</td></tr>
+      <tr><th>事業費と寄附</th><td>事業費 ${yen(p.budget)}のうち、貴社の寄附 ${yen(d.amount)}（${sharePct}%）</td></tr>
+      <tr><th>背景となる地域の課題</th><td class="muted">（担当課が記入）${kids?'例：市内の3歳未満児のうち保育園等に通っていない子の割合、子育ての孤立感に関する市民調査の結果など':'例：圏域の観光入込客数の推移、札幌市以外への周遊の少なさなど'}</td></tr>
+    </table>
+
+    <h4>2. 評価の考え方（ロジックモデル）</h4>
+    ${lmHtml}
+
+    <h4>3. 直接の結果</h4>
+    <table><tr><th>配布</th><th>受取率</th><th>利用率</th><th>${p.tour!=null?'周遊率':'2回以上の利用'}</th><th>アンケート回答率</th></tr>
+      <tr class="num"><td>${fmt(p.issued)} ${c.unitLabel}</td><td>${pct(p.received,p.issued)}%</td><td>${pct(p.used,p.received)}%</td><td>${Math.round((p.tour??p.repeat)*100)}%</td><td>${respRate}%</td></tr></table>
+    <div class="chart" style="margin-top:10px">${spark(p.trend,p.trendPrev)}<div class="legend"><span><i style="background:var(--navy)"></i>今年度の月別利用</span><span><i style="background:var(--bar)"></i>前年度</span></div></div>
+    <div class="grid g21" style="margin-top:8px">${Object.entries(p.breakdown).slice(0,2).map(([k,rows])=>`<div><div class="small" style="font-weight:700;margin-bottom:2px">${esc(k)}</div>${hbars(rows,{pct:true})}</div>`).join('')}</div>
+
+    <h4>4. 初期成果</h4>
+    <table><tr><th>成果</th><th>値</th><th>計算</th><th>データ</th></tr>${outcomes.map(o=>`<tr><td>${o[0]}</td><td class="num" style="white-space:nowrap"><b>${o[1]}</b></td><td class="small">${o[2]}</td><td class="small">${o[3]}</td></tr>`).join('')}</table>
+    <p class="small" style="margin:8px 0 0">事業がなくても起きた分（デッドウェイト）：「${kids?'クーポンがなくても利用した':'ギフトがなくても来た'}」${dead}%、「たぶん${kids?'利用した':'来た'}」${maybe}%。上の成果の値は、この分を差し引いた「${kids?'利用しなかった':'来なかった'}」の回答だけを使っている。</p>
+
+    <h4>5. 貴社の寄附がもたらしたもの</h4>
+    <table>
+      <tr><th style="width:40%">貴社の寄附の割合</th><td class="num">事業費の ${sharePct}%</td></tr>
+      <tr><th>割合に応じた利用</th><td class="num">${fmt(Math.round(p.used*share))} ${kids?'世帯':'件'}</td></tr>
+      <tr><th>割合に応じた初期成果</th><td class="num">${kids?`初めてサービスを使った ${fmt(Math.round(firstN*share))} 世帯`:`ギフトがなければ来なかった ${fmt(Math.round(addN*share))} 件`}</td></tr>
+      <tr><th>利用1${kids?'世帯':'件'}あたりの寄附</th><td class="num">約${fmt(Math.round(d.amount/(p.used*share)/100)*100)}円</td></tr>
+      <tr><th>社内への広がり</th><td class="num">社内共有ページを見た社員 ${fmt(c.corp.viewed)}人（${pct(c.corp.viewed,c.corp.employees)}%）、声への共感 ${fmt(vs.reduce((a,v)=>a+v.likes,0))}件</td></tr>
+    </table>
+    <p class="small muted" style="margin:6px 0 0">寄附は事業全体の財源に入るため、貴社分は寄附の割合で按分して示している。</p>
+
+    <h4>6. 受け取った人の声</h4>
+    ${Object.entries(themes).map(([th,list])=>`<div style="margin-top:8px"><div class="small" style="font-weight:700">${esc(th)}（${list.length}件）</div>${list.slice(0,2).map(v=>`<p style="margin:4px 0">「${esc(v.t)}」<span class="small muted">（${esc(v.a)}）</span></p>`).join('')}</div>`).join('')}
+    <p class="small muted" style="margin:6px 0 0">公開に同意した ${fmt(vs.length)}件から、テーマ別に抜粋。</p>
+
+    <h4>7. 評価の方法と限界</h4>
+    <ul class="small" style="margin:0;padding-left:18px">
+      <li>直接の結果は、ギフトの消し込み記録（全数）から集計。</li>
+      <li>初期成果は、利用後アンケート（回答率 ${respRate}%）と消し込み記録を掛け合わせて算出。回答した人に偏りがありうる。</li>
+      <li>${kids?'利用の前倒しや、他の支援で代わりに利用した分':'ほかの旅行予定からの振り替え（ディスプレースメント）'}は、アンケートだけでは測れないため含めていない。</li>
+      <li>中期・長期成果（${kids?'育児負担・孤立感の軽減':'観光入込客数・観光消費額'}）は、この報告書の範囲外。</li>
+    </ul>
+
+    <h4>8. 考察と次年度に向けて</h4>
+    <textarea id="repNote" aria-label="考察と次年度に向けて" placeholder="（担当課が記入）例：利用の少ない地区への周知、事業者の追加、次年度の目標値など">${esc(note)}</textarea>
+
+    <h4>9. 開示用の要約（統合報告書・サステナビリティレポート向け）</h4>
+    <div style="background:var(--panel);border-radius:6px;padding:10px 12px;font-size:13px">${esc(disclose)}</div>
+    <div class="small muted" style="margin-top:4px">そのまま貼れる形。GRI 413（地域コミュニティ）の取り組みの記載に使える。</div>
+
+    <h4>付録</h4>
+    <ul class="small" style="margin:0;padding-left:18px">
+      <li>アンケートの設問：${c.questions.map(q=>esc(q.text)).join('／')}</li>
+      <li>指標の定義：受取率＝受け取った数÷配布数、利用率＝利用数÷受け取った数、満足度＝5段階のうち上位2つの割合</li>
+      <li>評価の考え方の出典：内閣府「ロジック・モデル作成のポイント」、SIMI「社会的インパクト評価ツールセット 子育て支援」、観光庁「DMOのKGI・KPI計測の手引書」、慶應SFC「SROI実施ガイドライン」</li>
+    </ul>
+  </div>`;
+}
+function muniSettings(){
+  const c=C();
+  const tabs=[['survey','アンケート'],['corp','企業に見せる項目'],['reg','登録項目'],['project','事業・ギフト'],['auth','権限']];
+  let inner='';
+  if(S.setTab==='survey'){
+    inner = `<p class="small muted" style="margin-top:0">🔒 の2問（満足度・なければ使わなかったか）は、ほかの事業と比べるための共通設問で外せません。それ以外は事業目標に合わせて自由に変えられます。</p>
+    ${c.questions.map((q,i)=>`<div class="qrow"><span class="muted num">Q${i+1}</span>
+      <input value="${esc(q.text)}" data-act="qtext" data-i="${i}" ${q.locked?'disabled':''} aria-label="設問文">
+      <select data-act="qtype" data-i="${i}" ${q.locked?'disabled':''} aria-label="形式"><option value="scale" ${q.type==='scale'?'selected':''}>5段階</option><option value="choice" ${q.type==='choice'?'selected':''}>1つ選ぶ</option><option value="multi" ${q.type==='multi'?'selected':''}>複数選ぶ</option><option value="text" ${q.type==='text'?'selected':''}>自由記述</option></select>
+      <label class="small" title="企業に見せる"><span class="switch"><input type="checkbox" data-act="qshare" data-i="${i}" ${q.share?'checked':''}><span></span></span></label>
+      ${q.locked?'<span class="lock">🔒 共通</span>':`<button class="linkbtn" data-act="qdel" data-i="${i}">削除</button>`}</div>`).join('')}
+    <div class="small muted" style="margin:6px 0 10px">右のスイッチ：企業の報告書にこの設問の集計を入れるか</div>
+    <div class="toolbar"><button class="btn" data-act="qadd">＋ 設問を追加</button><select id="tmpl" aria-label="ひな形"><option value="">ひな形から追加…</option>${(c.kind==='子育て'?['子育てしている生活に満足していますか？（SIMI）','気軽に相談できる人や場所はありますか？（SIMI）','お子さんの様子で変化はありましたか？']:['ほかに立ち寄った市町村はありますか？','旅行全体で使った金額は？','誰かにすすめたいですか？']).map(t=>`<option>${esc(t)}</option>`).join('')}</select></div>`;
+  } else if(S.setTab==='corp'){
+    const items=[['cards','数字のカード'],['amount','　寄附額'],['households','　届いた数'],['userate','　利用率'],['reach','　波及率'],['voices','受け取った人の声'],['places','使われた場所のグラフ（1日1回更新）'],['report','中間・期末の報告書']];
+    inner = `<p class="small muted" style="margin-top:0">企業に見せる項目は事業ごとに自治体と企業ですり合わせて決めます。オフにした項目は企業の画面から消えます。個票・10件未満の区分・店ごとの地図は、設定に関わらず出しません。</p>
+      ${items.map(([k,l])=>`<div class="row"><span>${l}</span><label class="switch"><input type="checkbox" data-act="cshow" data-k="${k}" ${S.corpShow[k]?'checked':''}><span></span></label></div>`).join('')}`;
+  } else if(S.setTab==='reg'){
+    inner = `<p class="small muted" style="margin-top:0">利用登録の必須項目。効果の計算（何世帯・何人に届いたか、係数）に使います。年齢は区分で持ち、企業には集計値しか出ません。</p>
+      ${c.reg.map(r=>`<div class="row"><span><b>${esc(r.label)}</b><br><span class="small muted">${r.opts.map(esc).join(' / ')}</span></span><span class="pill">必須</span></div>`).join('')}
+      <button class="btn" style="margin-top:10px" data-act="stub">＋ 項目を追加</button>`;
+  } else if(S.setTab==='project'){
+    const p=c.projects[0];
+    inner = `<div class="fld"><label>事業名</label><input style="width:100%" value="${esc(p.name)}"></div>
+      <div class="fld"><label>事業目標（初期成果のひな形が変わります）</label><select style="width:100%"><option>${esc(p.goal)}</option><option>子どものスポーツ・体験の機会を増やす</option><option>観光客の滞在を延ばす</option></select></div>
+      <div class="fld"><label>寄附の登録</label>${c.donors.map(d=>`<div class="row"><span>${esc(d.name)}</span><span class="num">${yen(d.amount)}</span></div>`).join('')}<button class="btn" data-act="stub">＋ 寄附を登録</button></div>
+      <div class="fld"><label>配るギフト</label>${c.gifts.map(g=>`<div class="row"><span>${g.ic} ${esc(g.nm)}</span><span class="small muted">${esc(g.sm)}</span></div>`).join('')}</div>`;
+  } else {
+    inner = `<div class="row"><span>子育て支援課（担当）</span><span class="small">閲覧・設定・報告書</span></div><div class="row"><span>企画課</span><span class="small">閲覧・報告書</span></div><div class="row"><span>ギフティ運用担当</span><span class="small">個票は運用に必要な範囲のみ</span></div>`;
+  }
+  return `<div class="pagehead"><div><h1>設定</h1><div class="sub">${esc(c.projects[0].name)}</div></div></div>
+  <div class="card"><div class="bd"><div class="subtabs">${tabs.map(([k,l])=>`<button data-act="stab" data-v="${k}" aria-pressed="${S.setTab===k}">${l}</button>`).join('')}</div>${inner}</div></div>`;
+}
+
+/* ---------------- corp ---------------- */
+function corpData(){ const c=C(); const p=c.projects[0]; return {c,p}; }
+function renderCorp(){
+  const {c,p}=corpData(); const cp=c.corp; const sh=S.corpShow;
+  const myAmt=c.donors.filter(d=>d.name===cp.name).reduce((a,d)=>a+d.amount,0);
+  const cur = S.cmp==='month'?p.thisMonthUsed:p.used, prev=S.cmp==='month'?p.prevMonthUsed:p.prevYearUsed;
+  const reach=pct(cp.viewed,cp.employees);
+  const cards=[
+    ['amount','寄附額（自社）',yen(myAmt),'<span class="muted">今年度</span>'],
+    ['households','届いた'+(c.kind==='子育て'?'世帯':'件数'),fmt(p.received),delta(p.received, Math.round(p.received*0.92))],
+    ['userate','利用率',pct(p.used,p.received)+'%',delta(cur,prev)],
+    ['reach','波及率（社内）',reach+'%',`<span class="muted">${fmt(cp.viewed)}／${fmt(cp.employees)}人</span>`]
+  ].filter(x=>sh[x[0]]);
+  const placeKey=Object.keys(p.breakdown).find(k=>/地区|市町村/.test(k)); const place=p.breakdown[placeKey];
+  const kindKey=Object.keys(p.breakdown).find(k=>/券種|業種/.test(k));
+  const vs=c.voices.filter(v=>!v.hidden);
+  return `<div class="pagehead"><div><div class="sub">${esc(cp.name)}</div><h1>${esc(c.muni)}・${esc(p.name)}</h1><div class="sub">事業目標：${esc(p.goal)}</div></div>
+    <div class="toolbar">${cmpToggle()}<button class="btn" data-act="goShare">社内共有リンクを開く</button></div></div>
+  ${sh.cards&&cards.length?`<div class="grid g4">${cards.map(k=>`<div class="card kpi"><div class="lb"><span>${k[1]}</span><span class="pill live">リアルタイム</span></div><div class="v num">${k[2]}</div><div class="d">${k[3]}</div></div>`).join('')}</div>`:''}
+  <div class="grid g2" style="margin-top:16px">
+    ${sh.voices?`<div class="card"><div class="hd"><h3>受け取った人の声</h3><span class="pill live">リアルタイム</span></div><div class="bd">
+      ${vs.length?vs.map((v,i)=>`<div class="voice ${S.flash===v?'new':''}"><div class="av">声</div><div class="tx"><p>${esc(v.t)}</p><div class="meta"><span>${esc(v.a)}</span><span>${esc(v.ago)}</span><button class="like" data-act="like" data-i="${c.voices.indexOf(v)}" aria-pressed="${!!v.liked}">共感 ${v.likes}</button></div></div></div>`).join(''):'<div class="small muted">まだ声がありません</div>'}
+    </div></div>`:''}
+    <div class="grid" style="align-content:start">
+      ${sh.places?`<div class="card"><div class="hd"><h3>使われた場所（${esc(placeKey.replace('別',''))}）</h3><span class="pill daily">1日1回更新・本日6:00</span></div><div class="bd">${hbars(place,{pct:true})}<div class="small muted" style="margin-top:6px">10件未満の区分は「その他」。店ごとの地図は出しません。</div></div></div>`:''}
+      ${sh.places&&kindKey?`<div class="card"><div class="hd"><h3>よく使われた${c.kind==='子育て'?'サービス':'業種'}</h3><span class="pill daily">1日1回更新</span></div><div class="bd">${hbars(p.breakdown[kindKey],{pct:true})}</div></div>`:''}
+      ${sh.report?`<div class="card"><div class="hd"><h3>報告書</h3></div><div class="bd">
+        <div class="row"><span>中間報告（2026年9月末時点）<br><span class="small muted">初期成果・声の抜粋を含む</span></span><button class="btn" data-act="openReport">見る</button></div>
+        <div class="row"><span>期末報告（2027年3月末）</span><span class="pill">2027年4月予定</span></div></div></div>`:''}
+    </div>
+  </div>`;
+}
+function renderShare(){
+  const {c}=corpData(); const cp=c.corp; const vs=c.voices.filter(v=>!v.hidden);
+  return `<div class="share"><div class="pagehead"><div><div class="sub">${esc(cp.name)} 社内共有</div><h1>わたしたちの応援が、${esc(c.muni)}で届いています</h1><div class="sub">ログインなしで見られるページ。声と社内の広がりだけを表示します。</div></div></div>
+    <div class="card kpi" style="margin-bottom:16px"><div class="lb"><span>このページを見た社員</span><span class="pill live">リアルタイム</span></div><div class="v num">${fmt(cp.viewed)}人 <span class="small muted">／ ${fmt(cp.employees)}人（${pct(cp.viewed,cp.employees)}%）</span></div></div>
+    <div class="card"><div class="hd"><h3>受け取った人の声</h3></div><div class="bd">${vs.map(v=>`<div class="voice"><div class="av">声</div><div class="tx"><p>${esc(v.t)}</p><div class="meta"><span>${esc(v.a)}</span><button class="like" data-act="like" data-i="${c.voices.indexOf(v)}" aria-pressed="${!!v.liked}">共感 ${v.likes}</button></div></div></div>`).join('')}</div></div></div>`;
+}
+
+/* ---------------- render & events ---------------- */
+function render(){
+  document.querySelectorAll('#roles button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.role===S.role));
+  $('#caseSel').value=S.caseId;
+  $('#app').innerHTML = {phone:renderPhone, muni:renderMuni, corp:renderCorp, share:renderShare}[S.role]();
+  const bd=$('#bdSel'); if(bd) bd.onchange=e=>{S.bdKey=e.target.value; render();};
+  const rd=$('#repDonor'); if(rd) rd.onchange=e=>{S.reportDonor=+e.target.value; render();};
+  const rn=$('#repNote'); if(rn) rn.oninput=e=>{S.reportNote[S.caseId+S.reportDonor+S.reportKind]=e.target.value;};
+  const tm=$('#tmpl'); if(tm) tm.onchange=e=>{ if(!e.target.value) return; const qs=C().questions; qs.splice(qs.length-1,0,{id:'c'+Date.now(),text:e.target.value.replace(/（SIMI）/,''),type:'choice',opts:['はい','いいえ'],share:true}); toast('ひな形から設問を追加しました'); render(); };
+  S.flash=null;
+}
+document.getElementById('roles').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; S.role=b.dataset.role; if(S.role==='share') C().corp.viewed++; render(); window.scrollTo(0,0); });
+document.getElementById('caseSel').addEventListener('change', e=>{ S.caseId=e.target.value; S.phoneStep=0; S.reg={}; S.answers={}; S.muniProject=null; S.bdKey=null; S.reportDonor=0; render(); });
+document.getElementById('app').addEventListener('click', e=>{
+  const b=e.target.closest('[data-act]'); if(!b) return; const a=b.dataset.act; const c=C();
+  if(a==='reg'){ S.reg[b.dataset.k]=b.dataset.v; }
+  else if(a==='pnext'){ if(Object.keys(S.reg).length<c.reg.length) return; S.phoneStep=1; }
+  else if(a==='pback'){ S.phoneStep=Math.max(0,S.phoneStep-1); }
+  else if(a==='pick'){ S.phoneStep=2; }
+  else if(a==='redeem'){ const p=c.projects[0]; p.used++; p.thisMonthUsed++; p.trend[p.trend.length-1]++; S.useCount=(S.useCount||0)+1; S.phoneStep=3; toast('消し込みました。自治体と企業の利用数が1増えました'); }
+  else if(a==='ans'){ S.answers[b.dataset.q]=isNaN(+b.dataset.v)?b.dataset.v:+b.dataset.v; }
+  else if(a==='ansm'){ const q=b.dataset.q; const arr=S.answers[q]||[]; S.answers[q]=arr.includes(b.dataset.v)?arr.filter(x=>x!==b.dataset.v):[...arr,b.dataset.v]; }
+  else if(a==='submit'){
+    const msgQ=c.questions.find(q=>q.type==='text'); const t=msgQ?($('#q_'+msgQ.id)?.value||'').trim():''; const pub=$('#pub')?.checked;
+    c.questions.forEach(q=>{ const v=S.answers[q.id]; const ag=c.agg[q.id]; if(v==null||!ag) return;
+      if(q.type==='scale'){ ag[v-1]++; } else if(q.type==='choice'){ const i=q.opts.indexOf(v); if(i>=0) ag[i]=(ag[i]||0)+1; } else if(q.type==='multi'){ v.forEach(o=>ag[o]=(ag[o]||0)+1); } });
+    if(t && pub){ const attr = S.caseId==='matsumoto' ? `${S.reg[2]||''}・${S.reg[3]||''}地区` : `${S.reg[2]||''}・${S.reg[1]||''}`; const v={t, a:attr, ago:'たった今', likes:0}; c.voices.unshift(v); S.flash=v; }
+    S.phoneStep=4; toast(t&&pub?'ひとことが企業の画面に届きました':'回答を送信しました'); }
+  else if(a==='goCorp'){ S.role='corp'; }
+  else if(a==='prestart'){ S.phoneStep=1; S.answers={}; }
+  else if(a==='mpage'){ S.muniPage=b.dataset.p; }
+  else if(a==='mproj'){ S.muniProject=b.dataset.id; S.bdKey=null; }
+  else if(a==='cmp'){ S.cmp=b.dataset.v; }
+  else if(a==='hide'){ const v=c.voices[+b.dataset.i]; v.hidden=!v.hidden; toast(v.hidden?'企業の画面から非表示にしました':'企業の画面に戻しました'); }
+  else if(a==='rkind'){ S.reportKind=b.dataset.v; }
+  else if(a==='export'){ toast(`${b.dataset.v}で書き出し（プロトタイプのため未実装）`); return; }
+  else if(a==='stab'){ S.setTab=b.dataset.v; }
+  else if(a==='qdel'){ c.questions.splice(+b.dataset.i,1); toast('設問を削除しました。スマホのアンケートに反映されます'); }
+  else if(a==='qadd'){ c.questions.splice(c.questions.length-1,0,{id:'c'+Date.now(),text:'新しい設問',type:'choice',opts:['はい','いいえ'],share:true}); }
+  else if(a==='cshow'){ S.corpShow[b.dataset.k]=b.checked; toast(b.checked?'企業の画面に表示します':'企業の画面から外しました'); return; }
+  else if(a==='qshare'){ c.questions[+b.dataset.i].share=b.checked; return; }
+  else if(a==='like'){ const v=c.voices[+b.dataset.i]; v.liked=!v.liked; v.likes+=v.liked?1:-1; }
+  else if(a==='goShare'){ S.role='share'; c.corp.viewed++; window.scrollTo(0,0); }
+  else if(a==='openReport'){ S.role='muni'; S.muniPage='report'; S.reportKind='mid'; const i=c.donors.findIndex(d=>d.name===c.corp.name); S.reportDonor=i<0?0:i; window.scrollTo(0,0); }
+  else if(a==='stub'){ toast('プロトタイプのため未実装'); return; }
+  else return;
+  render();
+});
+document.getElementById('app').addEventListener('change', e=>{
+  const t=e.target; const c=C();
+  if(t.dataset.act==='qtext'){ c.questions[+t.dataset.i].text=t.value; }
+  if(t.dataset.act==='qtype'){ const q=c.questions[+t.dataset.i]; q.type=t.value; if((q.type==='choice'||q.type==='multi')&&!q.opts) q.opts=['はい','いいえ']; render(); }
+});
+render();
+</script>
