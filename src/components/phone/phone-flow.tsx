@@ -44,7 +44,7 @@ export function PhoneFlow() {
       <aside className="order-2 lg:order-1 lg:pt-6">
         <h1 className="text-xl font-bold tracking-tight">受け取る人の画面（スマホ）</h1>
         <p className="mt-2 max-w-lg text-[13px] leading-relaxed text-muted-foreground">
-          市のサイト・会員登録・クーポンの受け取りと消し込みは、既存のe街の仕組みのまま。新しく足すのは、使った直後の1分のアンケートだけ。
+          市のサイト・会員登録・クーポンの受け取りと消し込みは、既存のe街の仕組みのまま。アンケートも giftee の既存の Survey を流用し、e街の消し込みの直後に出すようにつなぐ。
         </p>
         <div className="mt-4 max-w-lg rounded-lg border bg-card p-4 text-[13px]">
           <p className="font-bold">アンケートで集めるもの</p>
@@ -60,7 +60,7 @@ export function PhoneFlow() {
             <li key={s.key}>
               {(i === 0 || i === 6) && (
                 <p className={cn("px-3 pt-2 pb-1 text-[11px] font-bold", i === 0 ? "text-muted-foreground" : "text-orange")}>
-                  {i === 0 ? "既存の仕組み（市のサイト・e街）" : "新しく足すところ"}
+                  {i === 0 ? "既存の仕組み（市のサイト・e街）" : "giftee Survey を消し込みの後につなぐ"}
                 </p>
               )}
               <button
