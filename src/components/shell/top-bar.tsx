@@ -16,10 +16,10 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const ROLES = [
-  { href: "/phone", label: "受け取る人", sub: "スマホ" },
-  { href: "/muni", label: "自治体", sub: "PC" },
-  { href: "/corp", label: "寄附企業", sub: "PC" },
-  { href: "/share", label: "社内共有", sub: "社員" },
+  { href: "/", label: "提案の要点", sub: "" },
+  { href: "/phone", label: "受け取る人", sub: "アンケート" },
+  { href: "/muni/report", label: "自治体", sub: "報告書" },
+  { href: "/share", label: "寄附企業", sub: "社内共有ページ" },
 ];
 
 export function TopBar() {
@@ -38,13 +38,13 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur">
       <div className="mx-auto flex max-w-[1240px] flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2.5 sm:px-6">
-        <Link href="/corp" className="flex items-baseline gap-2 whitespace-nowrap">
+        <Link href="/" className="flex items-baseline gap-2 whitespace-nowrap">
           <LogoA corp={c.corp.name.replace("株式会社", "")} city={c.muniShort} />
         </Link>
 
         <nav aria-label="役割の切り替え" className="order-3 -mx-1 flex w-full gap-1 overflow-x-auto sm:order-none sm:w-auto">
           {ROLES.map((r) => {
-            const on = r.href === "/muni" ? path.startsWith("/muni") : path === r.href;
+            const on = r.href.startsWith("/muni") ? path.startsWith("/muni") : path === r.href;
             return (
               <Link
                 key={r.href}

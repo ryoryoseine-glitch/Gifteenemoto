@@ -44,24 +44,23 @@ export function PhoneFlow() {
       <aside className="order-2 lg:order-1 lg:pt-6">
         <h1 className="text-xl font-bold tracking-tight">受け取る人の画面（スマホ）</h1>
         <p className="mt-2 max-w-lg text-[13px] leading-relaxed text-muted-foreground">
-          入口は市がもともと持っているサイトで、このサービスでは作りません。そこにあるクーポンのバナーから先が、このサービスです。
+          市のサイト・会員登録・クーポンの受け取りと消し込みは、既存のe街の仕組みのまま。新しく足すのは、使った直後の1分のアンケートだけ。
         </p>
         <div className="mt-4 max-w-lg rounded-lg border bg-card p-4 text-[13px]">
-          <p className="font-bold">このサービスが提供するもの</p>
+          <p className="font-bold">アンケートで集めるもの</p>
           <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted-foreground">
-            <li>クーポンなどの体験の受け取り（地元企業の支援を受けたもの）</li>
-            <li>お店・施設での消し込み</li>
-            <li>使った直後の1分のアンケート</li>
+            <li>満足度と「このクーポンがなければ利用しなかったか」（報告書の数字）</li>
+            <li>市や支援企業へのひとこと（公開に同意したものだけ、企業の社内共有ページに届く）</li>
           </ol>
-          <p className="mt-2 text-xs text-muted-foreground">市のサイト・利用登録の仕組みは、既存のもの（e街の会員登録など）を使う想定です。</p>
-          <p className="mt-1 text-xs text-muted-foreground">画面はイメージ。松本市の場合、本番は市の LINE で申請・審査を受けたあとに届くシリアルコードを入れてクーポンを受け取ります。</p>
+          <p className="mt-2 text-xs text-muted-foreground">回答は利用の記録（チケット）と会員の登録項目にひもづけて集計。企業には10件未満の区分を出さない集計値と、ぼかした属性だけを渡す。</p>
+          <p className="mt-1 text-xs text-muted-foreground">画面はイメージ。松本市の場合、本番は市の LINE で申請・審査を受けたあとに届くシリアルコードでクーポンを受け取る。</p>
         </div>
         <ol className="mt-6 max-w-sm space-y-1">
           {STEPS.map((s, i) => (
             <li key={s.key}>
-              {(i === 0 || i === 3) && (
+              {(i === 0 || i === 6) && (
                 <p className={cn("px-3 pt-2 pb-1 text-[11px] font-bold", i === 0 ? "text-muted-foreground" : "text-orange")}>
-                  {i === 0 ? "既存の仕組み（市のサイト・e街の会員登録）" : "このサービスが提供するところ"}
+                  {i === 0 ? "既存の仕組み（市のサイト・e街）" : "新しく足すところ"}
                 </p>
               )}
               <button
@@ -92,12 +91,12 @@ export function PhoneFlow() {
             最初から試す
           </button>
           <span className="text-muted-foreground">／</span>
-          <Link href="/corp" className="text-link hover:underline">
-            企業の画面をひらく
+          <Link href="/share" className="text-link hover:underline">
+            社内共有ページをひらく
           </Link>
           <span className="text-muted-foreground">／</span>
-          <Link href="/muni" className="text-link hover:underline">
-            自治体の画面をひらく
+          <Link href="/muni/report" className="text-link hover:underline">
+            自治体の報告書をひらく
           </Link>
         </div>
       </aside>
@@ -850,8 +849,8 @@ function Done({ c }: { c: CaseData }) {
       </div>
       <div className="shrink-0 space-y-2 p-4">
         {flash && (
-          <Link href="/corp" className="flex h-12 w-full items-center justify-center rounded-full bg-[#dc7f68] text-[15px] font-bold text-white">
-            （デモ）企業の画面で見る
+          <Link href="/share" className="flex h-12 w-full items-center justify-center rounded-full bg-[#dc7f68] text-[15px] font-bold text-white">
+            （デモ）企業の社内共有ページで見る
           </Link>
         )}
         <Cta variant="line" onClick={() => setStep("wallet")}>

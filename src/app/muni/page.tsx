@@ -1,5 +1,5 @@
-import { MuniDashboard } from "@/components/muni/muni-dashboard";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <MuniDashboard />;
+  redirect("/muni/report");
 }

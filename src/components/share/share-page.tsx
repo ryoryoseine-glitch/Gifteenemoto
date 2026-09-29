@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Baby, ExternalLink, Heart, Mountain, PartyPopper, Pause, Play, Users, Utensils } from "lucide-react";
+import { Heart, Pause, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ago, fmt, publicAttrs, yen } from "@/lib/format";
-import { toast } from "sonner";
-import { corpSupports, giftProject, projectTotals, sum } from "@/lib/metrics";
+import { ago, fmt, pct, pctText, publicAttrs, yen } from "@/lib/format";
+import type { CaseData } from "@/data/types";
+import { MIN_CELL, corpSupports, giftProject, projectTotals, sum } from "@/lib/metrics";
 import { useApp, useCase, useExtra } from "@/store/useApp";
 import { GiftPhoto, PhotoCredits } from "@/components/gift/gift-photo";
 import { VoiceBubble } from "@/components/insight/voice-bubble";
@@ -140,7 +140,7 @@ export function SharePage() {
         </section>
       )}
 
-      <Events c={c} />
+      <SurveyFindings c={c} projectIds={pids} />
 
       {/* 感謝の声（リアルタイムに届く） */}
       <h2 className="mt-12 text-center text-lg font-bold">受け取った方から届いた「ありがとう」</h2>
@@ -173,83 +173,41 @@ function Slide({ s, still }: { s: { photo: string; title: string }; still?: bool
   );
 }
 
-/** 市のイベント（モック。日付・内容は仮）。子育てに限らず、観光・お祭りも出す。forStaff は社員向け */
-const EVENTS: Record<string, { date: string; title: string; place: string; note: string; tag: string; photo?: string; forStaff?: boolean }[]> = {
-  matsumoto: [
-    { date: "10月20日（火）", title: "中間報告会（オンライン・30分）", place: "オンライン", note: "松本市の担当課から、半年間の使われ方と声を報告", tag: "社員向け", forStaff: true },
-    { date: "例年 11月", title: "国宝松本城 お城まつり", place: "松本城公園", note: "火縄銃の演武や武者行列など、秋のお城の催し", tag: "お祭り", photo: "city-matsumoto" },
-    { date: "11月9日（土）", title: "子育てひろばで絵本の読み聞かせ", place: "松本市 子育て支援センター", note: "社員ボランティアを募集（10名まで）", tag: "子育て", photo: "m1", forStaff: true },
-    { date: "例年 1月下旬", title: "国宝松本城 氷彫フェスティバル", place: "松本城公園", note: "夜のお城と氷の彫刻", tag: "観光" },
-    { date: "例年 5月末", title: "クラフトフェアまつもと", place: "あがたの森公園", note: "全国から工芸の作り手が集まる", tag: "観光" },
-    { date: "例年 8月", title: "松本ぼんぼん", place: "松本駅前・中心市街地", note: "まちじゅうで踊る夏まつり", tag: "お祭り" },
-  ],
-  sapporo: [
-    { date: "10月22日（木）", title: "中間報告会（オンライン・30分）", place: "オンライン", note: "観光機構から、使われた市町村と旅行者の声を報告", tag: "社員向け", forStaff: true },
-    { date: "例年 2月上旬", title: "さっぽろ雪まつり", place: "札幌市 大通公園ほか", note: "大小の雪像が並ぶ冬の祭り", tag: "お祭り", photo: "city-sapporo" },
-    { date: "例年 2月", title: "小樽雪あかりの路", place: "小樽市 運河周辺", note: "ろうそくの灯りでまちを照らす", tag: "観光", photo: "s1" },
-    { date: "例年 1〜2月", title: "定山渓 雪灯路", place: "札幌市 定山渓温泉", note: "雪の灯りと温泉街の散歩", tag: "観光", photo: "s2" },
-    { date: "例年 9月", title: "さっぽろオータムフェスト", place: "札幌市 大通公園", note: "北海道の秋の味覚が集まる", tag: "食" },
-    { date: "11月14日（土）", title: "小樽運河の清掃ボランティア", place: "小樽市", note: "社員と家族で参加できる（20名まで）", tag: "社員向け", forStaff: true },
-  ],
-};
-
-const TAG_STYLE: Record<string, { bg: string; ink: string; icon: typeof Heart }> = {
-  社員向け: { bg: "#e3eff7", ink: "#2c5b84", icon: Users },
-  お祭り: { bg: "#fde8df", ink: "#c8542a", icon: PartyPopper },
-  観光: { bg: "#dcebf7", ink: "#2b6cb0", icon: Mountain },
-  子育て: { bg: "#e3f2e6", ink: "#2f7d4f", icon: Baby },
-  食: { bg: "#fbe4ee", ink: "#b8456b", icon: Utensils },
-};
-
-function EventTile({ tag }: { tag: string }) {
-  const t = TAG_STYLE[tag] ?? TAG_STYLE["観光"];
-  return (
-    <span className="grid w-24 shrink-0 place-items-center" style={{ background: t.bg, color: t.ink }}>
-      <t.icon className="size-8" strokeWidth={1.5} />
-    </span>
-  );
-}
-
-function Events({ c }: { c: { id: string; muniShort: string } }) {
-  const list = EVENTS[c.id] ?? [];
+/** アンケートでわかったこと（企業に出してよい設問だけ。数字は事業全体） */
+function SurveyFindings({ c, projectIds }: { c: CaseData; projectIds: string[] }) {
+  const addWord = c.kind === "観光" ? "このギフトがなければ来なかった" : "このクーポンがなければ利用しなかった";
+  const cards = projectIds
+    .map((id) => {
+      const p = c.projects.find((x) => x.id === id)!;
+      const a = c.agg[id];
+      if (!a) return null;
+      const sat = (a.sat as number[] | undefined) ?? [];
+      const add = (a.add as number[] | undefined) ?? [];
+      const n = sum(sat);
+      if (n < MIN_CELL) return null;
+      return { p, n, top2: pct((sat[3] ?? 0) + (sat[4] ?? 0), n), notWithout: pct(add[add.length - 1] ?? 0, sum(add)) };
+    })
+    .filter((x): x is NonNullable<typeof x> => !!x);
+  if (!cards.length) return null;
   return (
     <section className="mt-10">
-      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-lg font-bold">
-          {c.muniShort}のイベント<span className="ml-2 text-[13px] font-normal text-muted-foreground">（日付・内容は仮）</span>
-        </h2>
-        <span className="text-xs text-muted-foreground">子育て・観光・お祭りなど</span>
-      </div>
-      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {list.map((e) => (
-          <li key={e.title} className="flex overflow-hidden rounded-xl border bg-card">
-            {e.photo ? (
-              e.photo.startsWith("city-") ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={`/city/${e.photo.slice(5)}.jpg`} alt="" className="w-24 shrink-0 object-cover" />
-              ) : (
-                <GiftPhoto id={e.photo} className="w-24 shrink-0" />
-              )
-            ) : (
-              <EventTile tag={e.tag} />
-            )}
-            <div className="flex min-w-0 flex-1 flex-col p-3.5">
-              <p className="flex items-center gap-2 text-xs">
-                <span className="font-bold text-orange tnum">{e.date}</span>
-                <span className={cn("rounded-full px-1.5 py-px text-[10px] font-bold", e.forStaff ? "bg-brand-soft text-brand" : "bg-muted text-muted-foreground")}>{e.tag}</span>
-              </p>
-              <p className="mt-1 text-[14px] leading-snug font-bold">{e.title}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{e.place}</p>
-              <p className="mt-1.5 flex-1 text-[12px] leading-relaxed text-muted-foreground">{e.note}</p>
-              <button
-                type="button"
-                onClick={() => toast("詳しい案内のページを開きます（プロトタイプのため未実装）")}
-                className="mt-2.5 inline-flex h-8 items-center gap-1 self-start text-[12px] font-bold text-link hover:underline"
-              >
-                詳しく見る
-                <ExternalLink className="size-3" />
-              </button>
-            </div>
+      <h2 className="text-lg font-bold">使った人のアンケートから</h2>
+      <p className="mt-1 text-xs text-muted-foreground">使った直後の1分アンケートの集計。事業全体の数字で、回答が10件未満の事業は出さない</p>
+      <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+        {cards.map(({ p, n, top2, notWithout }) => (
+          <li key={p.id} className="rounded-xl border bg-card p-5">
+            <p className="text-[13px] font-bold">{p.name}</p>
+            <dl className="mt-3 grid grid-cols-2 gap-4">
+              <div>
+                <dt className="text-xs text-muted-foreground">満足・やや満足</dt>
+                <dd className="mt-0.5 text-2xl font-bold tnum">{pctText(top2)}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">{addWord}</dt>
+                <dd className="mt-0.5 text-2xl font-bold tnum">{pctText(notWithout)}</dd>
+              </div>
+            </dl>
+            <p className="mt-3 text-xs text-muted-foreground">回答 {fmt(n)}件</p>
           </li>
         ))}
       </ul>

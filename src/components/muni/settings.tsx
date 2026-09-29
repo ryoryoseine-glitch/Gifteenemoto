@@ -2,12 +2,10 @@
 
 import { ArrowDown, ArrowUp, Lock, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { yen } from "@/lib/format";
 import type { QuestionType } from "@/data/types";
-import { useApp, useCase, type CorpShow } from "@/store/useApp";
+import { useApp, useCase } from "@/store/useApp";
 import { PageHeader, Section } from "@/components/shell/parts";
-import { DonorsTab, ProjectTab, RegEditTab } from "./settings/master-tabs";
-import { GiftPhoto } from "@/components/gift/gift-photo";
+import { DonorsTab, ProjectTab } from "./settings/master-tabs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -59,37 +57,21 @@ export function Settings() {
   const c = useCase();
   return (
     <div>
-      <PageHeader eyebrow={c.muni} title="設定" sub="変えた内容は、スマホと企業の画面にすぐ反映されます" />
+      <PageHeader eyebrow={c.muni} title="設定" sub="アンケートの設問と、報告書に使う事業・寄附企業。変えた内容はスマホ・報告書・社内共有ページにすぐ反映" />
       <Tabs defaultValue="survey">
         <TabsList variant="line" className="mb-5 w-full justify-start overflow-x-auto border-b">
           <TabsTrigger value="survey" className="flex-none px-3">アンケート</TabsTrigger>
-          <TabsTrigger value="corp" className="flex-none px-3">企業に見せる項目</TabsTrigger>
-          <TabsTrigger value="project" className="flex-none px-3">事業と KPI</TabsTrigger>
+          <TabsTrigger value="project" className="flex-none px-3">事業</TabsTrigger>
           <TabsTrigger value="donors" className="flex-none px-3">寄附企業</TabsTrigger>
-          <TabsTrigger value="reg" className="flex-none px-3">登録項目</TabsTrigger>
-          <TabsTrigger value="gifts" className="flex-none px-3">クーポン一覧</TabsTrigger>
-          <TabsTrigger value="auth" className="flex-none px-3">権限</TabsTrigger>
         </TabsList>
         <TabsContent value="survey">
           <SurveyTab />
-        </TabsContent>
-        <TabsContent value="corp">
-          <CorpTab />
         </TabsContent>
         <TabsContent value="project">
           <ProjectTab />
         </TabsContent>
         <TabsContent value="donors">
           <DonorsTab />
-        </TabsContent>
-        <TabsContent value="reg">
-          <RegEditTab />
-        </TabsContent>
-        <TabsContent value="gifts">
-          <GiftsTab />
-        </TabsContent>
-        <TabsContent value="auth">
-          <AuthTab />
         </TabsContent>
       </Tabs>
     </div>
@@ -207,118 +189,5 @@ function SurveyTab() {
 
 /* ---------------- 企業に見せる項目 ---------------- */
 
-const CORP_ITEMS: { k: keyof CorpShow; label: string; sub?: string; indent?: boolean }[] = [
-  { k: "voices", label: "受け取った人の声", sub: "公開に同意したものだけ" },
-  { k: "cards", label: "数字のカード" },
-  { k: "amount", label: "寄附額", indent: true },
-  { k: "households", label: "届いた数", indent: true },
-  { k: "userate", label: "利用率", indent: true },
-  { k: "places", label: "使われた場所", sub: "1日1回更新。10件未満は「その他」" },
-  { k: "report", label: "報告書（中間・期末）" },
-];
-
-function CorpTab() {
-  const show = useApp((s) => s.corpShow);
-  const set = useApp((s) => s.setCorpShow);
-  return (
-    <Section title="寄附企業の画面に出す項目" bodyClassName="p-0">
-      <p className="border-b px-5 py-2.5 text-xs text-muted-foreground">
-        事業ごとに自治体と企業ですり合わせて決めます。個票・10件未満の区分・店ごとの地図は、設定に関わらず出しません。リアルタイムの数字が要らない企業は「数字のカード」をオフにすると、声と報告書だけになります。
-      </p>
-      <ul>
-        {CORP_ITEMS.map((it) => (
-          <li key={it.k} className="flex items-center justify-between gap-3 border-b px-5 py-3 last:border-b-0">
-            <span className={it.indent ? "pl-5 text-[13px] text-muted-foreground" : "text-[13px] font-medium"}>
-              {it.label}
-              {it.sub && <span className="ml-2 text-xs font-normal text-muted-foreground">{it.sub}</span>}
-            </span>
-            <Switch
-              checked={show[it.k]}
-              disabled={it.indent && !show.cards}
-              onCheckedChange={(v) => {
-                set(it.k, v);
-                toast(v ? "企業の画面に表示します" : "企業の画面から外しました");
-              }}
-              aria-label={it.label}
-            />
-          </li>
-        ))}
-      </ul>
-    </Section>
-  );
-}
 
 /* ---------------- 登録項目 ---------------- */
-
-/* ---------------- 事業・ギフト ---------------- */
-
-function GiftsTab() {
-  const c = useCase();
-  return (
-    <div className="space-y-5">
-      {c.projects.map((p) => (
-        <Section
-          key={p.id}
-          title={
-            <span className="flex items-center gap-2">
-              {p.name}
-              {p.status === "closed" && <Badge variant="secondary">終了</Badge>}
-            </span>
-          }
-          meta={<span className="text-xs text-muted-foreground">{p.period}</span>}
-          bodyClassName="p-0"
-        >
-          <p className="border-b px-5 py-2.5 text-xs text-muted-foreground">
-            事業目標：{p.goal}　対象：{p.target}
-            <br />
-            企業への報告：寄附の割合で按分（標準）。自治体と企業が合意した場合は、企業ごとにクーポン（券種）を分けて、その実績を出すこともできる。
-          </p>
-          <ul>
-            {c.donors
-              .filter((d) => d.projectId === p.id)
-              .map((d) => (
-                <li key={d.id} className="flex items-center gap-3 border-b px-5 py-2.5 last:border-b-0">
-                  <GiftPhoto id={d.photo} className="size-11 shrink-0 rounded-md" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[13px] font-medium">{d.giftName}</span>
-                    <span className="text-xs text-muted-foreground">{d.name}</span>
-                  </span>
-                  <span className="text-[13px] tnum">{yen(d.amount)}</span>
-                </li>
-              ))}
-          </ul>
-        </Section>
-      ))}
-    </div>
-  );
-}
-
-/* ---------------- 権限 ---------------- */
-
-function AuthTab() {
-  const c = useCase();
-  const rows =
-    c.kind === "子育て"
-      ? [
-          ["こども家庭課（担当）", "閲覧・設定・報告書"],
-          ["企画課", "閲覧・報告書"],
-          ["ギフティ運用担当", "個票は運用に必要な範囲のみ"],
-        ]
-      : [
-          ["観光機構 事務局（担当）", "閲覧・設定・報告書"],
-          ["構成市町村の観光課", "自市町村の閲覧"],
-          ["ギフティ運用担当", "個票は運用に必要な範囲のみ"],
-        ];
-  return (
-    <Section title="見られる人" bodyClassName="p-0">
-      <ul>
-        {rows.map(([who, what]) => (
-          <li key={who} className="flex items-center justify-between gap-3 border-b px-5 py-3 text-[13px] last:border-b-0">
-            <span className="font-medium">{who}</span>
-            <span className="text-muted-foreground">{what}</span>
-          </li>
-        ))}
-      </ul>
-    </Section>
-  );
-}

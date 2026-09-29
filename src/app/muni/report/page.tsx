@@ -1,5 +1,5 @@
-import { ReportPage } from "@/components/report/report-page";
+import { SimpleReport } from "@/components/report/simple-report";
 
 export default function Page() {
-  return <ReportPage mode="muni" />;
+  return <SimpleReport />;
 }

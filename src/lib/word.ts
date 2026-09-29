@@ -6,6 +6,9 @@ export function downloadWord(filename: string) {
   // 画像は絶対パスに、コピーのボタンなど紙に要らないものは外す
   clone.querySelectorAll("img").forEach((img) => img.setAttribute("src", new URL(img.getAttribute("src") ?? "", location.origin).href));
   clone.querySelectorAll("button").forEach((b) => b.remove());
+  // 画面で記入する欄（textarea）は外し、記入した文を出す段落を見せる
+  clone.querySelectorAll("[data-word-skip]").forEach((b) => b.remove());
+  clone.querySelectorAll("[data-word-show]").forEach((b) => b.classList.remove("hidden"));
   clone.querySelectorAll("[data-fill]").forEach((f) => {
     (f as HTMLElement).setAttribute("style", "border:1px dashed #e0612f;background:#fdf1ec;color:#c8542a;padding:6pt;");
   });
