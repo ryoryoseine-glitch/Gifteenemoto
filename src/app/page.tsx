@@ -3,7 +3,7 @@ import { LogicTree } from "@/components/concept/logic-tree";
 /** 提案の要点：価値から実装までのロジックツリー */
 export default function Home() {
   return (
-    <div className="mx-auto max-w-[1400px] space-y-4 py-2">
+    <div className="mx-auto max-w-[1520px] space-y-4 py-2">
       <div>
         <p className="text-xs font-bold text-orange">giftee 提案・コンセプト版</p>
         <h1 className="mt-1 text-[24px] leading-snug font-bold tracking-tight sm:text-[30px]">寄附ギフトの試作：価値から実装までの分解</h1>

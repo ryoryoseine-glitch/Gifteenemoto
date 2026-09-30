@@ -1,15 +1,16 @@
 /** 提案の要点：価値 → 課題 → 体験 → 実装 のロジックツリー（静的な SVG） */
 
-type Kind = "v" | "k" | "e" | "i";
+type Kind = "v" | "b" | "k" | "e" | "i";
 type Impl = "old" | "new" | "chk";
 type Node = { c: Kind; s?: Impl; y: number; t: string[] };
 
-const COL: Record<Kind, { x: number; w: number }> = { v: { x: 12, w: 180 }, k: { x: 236, w: 214 }, e: { x: 494, w: 236 }, i: { x: 774, w: 238 } };
-const MEMO_X = 1030;
+const COL: Record<Kind, { x: number; w: number }> = { v: { x: 12, w: 150 }, b: { x: 190, w: 176 }, k: { x: 400, w: 210 }, e: { x: 644, w: 214 }, i: { x: 892, w: 236 } };
+const MEMO_X = 1148;
 const H = 62;
 
 const STYLE: Record<Kind | Impl, { box: string; ink: string }> = {
   v: { box: "fill-[#1d2742] stroke-[#1d2742] dark:fill-[#34426a] dark:stroke-[#34426a]", ink: "fill-white" },
+  b: { box: "fill-orange-soft stroke-orange", ink: "fill-foreground" },
   k: { box: "fill-orange-soft stroke-orange/40", ink: "fill-foreground" },
   e: { box: "fill-card stroke-border", ink: "fill-foreground" },
   i: { box: "fill-card stroke-border", ink: "fill-foreground" },
@@ -24,24 +25,29 @@ const TAG: Record<Impl, { label: string; fill: string }> = {
 };
 
 const N: Record<string, Node> = {
-  V1: { c: "v", y: 160, t: ["① 思いをつなぐ", "使用者・自治体・企業"] },
-  E1: { c: "e", y: 60, t: ["使用者が", "コメントを書ける"] },
-  E2: { c: "e", y: 160, t: ["自治体が", "コメントを精査できる"] },
-  E3: { c: "e", y: 262, t: ["企業が", "コメントを見られる"] },
-  I1: { c: "i", s: "old", y: 60, t: ["giftee Survey"] },
-  I2: { c: "i", s: "chk", y: 130, t: ["Survey の集計機能に", "発行〜消し込みのデータを追加"] },
-  I3: { c: "i", s: "new", y: 196, t: ["企業への共有の設定"] },
-  I4: { c: "i", s: "new", y: 262, t: ["企業の共有ページ"] },
+  V1: { c: "v", y: 320, t: ["思いをつなぐ", "使用者・自治体・企業"] },
 
-  V2: { c: "v", y: 440, t: ["② 成果を返す", "自治体 → 企業"] },
-  K1: { c: "k", y: 368, t: ["自治体：成果報告の", "手間がかけられない"] },
-  K2: { c: "k", y: 440, t: ["自治体：数値の計測が", "難しい"] },
-  K3: { c: "k", y: 512, t: ["企業：インパクト計測が", "難しい・追加費用になる"] },
-  E4: { c: "e", y: 404, t: ["自治体がギフティのデータで", "簡単に成果報告できる"] },
-  E5: { c: "e", y: 512, t: ["企業が報告を", "共有してもらい見られる"] },
-  I5: { c: "i", s: "old", y: 360, t: ["Survey の既存機能", "（回答・集計）"] },
-  I6: { c: "i", s: "new", y: 430, t: ["利用者IDとのひもづけ", "発行〜消し込みのデータ・", "会員情報・Survey の結果"] },
-  I7: { c: "i", s: "new", y: 500, t: ["簡易報告書の", "Word 生成"] },
+  B1: { c: "b", y: 170, t: ["① 使用者からの", "フィードバックがない"] },
+  K2: { c: "k", y: 80, t: ["企業：受け取った人の反応が", "返ってこない"] },
+  K3: { c: "k", y: 170, t: ["企業：社員が寄附を知らず", "社内に広がらない"] },
+  K4: { c: "k", y: 275, t: ["自治体：声を集めて企業に", "返す手段がない"] },
+  E1: { c: "e", y: 80, t: ["使用者が", "コメントを書ける"] },
+  E3: { c: "e", y: 170, t: ["企業・社員が", "コメントを見られる"] },
+  E2: { c: "e", y: 275, t: ["自治体が", "コメントを精査できる"] },
+  I1: { c: "i", s: "old", y: 80, t: ["giftee Survey"] },
+  I4: { c: "i", s: "new", y: 170, t: ["企業の共有ページ"] },
+  I2: { c: "i", s: "chk", y: 245, t: ["Survey の集計機能に", "発行〜消し込みのデータを追加"] },
+  I3: { c: "i", s: "new", y: 310, t: ["企業への共有の設定"] },
+
+  B2: { c: "b", y: 475, t: ["② 成果が返っていない", "自治体 → 企業"] },
+  K5: { c: "k", y: 405, t: ["自治体：成果報告の", "手間がかけられない"] },
+  K6: { c: "k", y: 475, t: ["自治体：数値の計測が", "難しい"] },
+  K7: { c: "k", y: 545, t: ["企業：インパクト計測が", "難しい・追加費用になる"] },
+  E4: { c: "e", y: 440, t: ["自治体がギフティのデータで", "簡単に成果報告できる"] },
+  E5: { c: "e", y: 545, t: ["企業が報告を", "共有してもらい見られる"] },
+  I5: { c: "i", s: "old", y: 400, t: ["Survey の既存機能", "（回答・集計）"] },
+  I6: { c: "i", s: "new", y: 470, t: ["利用者IDとのひもづけ", "発行〜消し込みのデータ・", "会員情報・Survey の結果"] },
+  I7: { c: "i", s: "new", y: 540, t: ["簡易報告書の", "Word 生成"] },
 };
 
 const MEMO: Record<string, string[]> = {
@@ -55,19 +61,25 @@ const MEMO: Record<string, string[]> = {
 };
 
 const EDGES: [string, string][] = [
-  ["V1", "E1"],
-  ["V1", "E2"],
-  ["V1", "E3"],
+  ["V1", "B1"],
+  ["V1", "B2"],
+  ["B1", "K2"],
+  ["B1", "K3"],
+  ["B1", "K4"],
+  ["K2", "E1"],
+  ["K2", "E3"],
+  ["K3", "E3"],
+  ["K4", "E2"],
   ["E1", "I1"],
+  ["E3", "I4"],
   ["E2", "I2"],
   ["E2", "I3"],
-  ["E3", "I4"],
-  ["V2", "K1"],
-  ["V2", "K2"],
-  ["V2", "K3"],
-  ["K1", "E4"],
-  ["K2", "E4"],
-  ["K3", "E5"],
+  ["B2", "K5"],
+  ["B2", "K6"],
+  ["B2", "K7"],
+  ["K5", "E4"],
+  ["K6", "E4"],
+  ["K7", "E5"],
   ["E4", "I5"],
   ["E4", "I6"],
   ["E4", "I7"],
@@ -76,7 +88,7 @@ const EDGES: [string, string][] = [
 
 export function LogicTree() {
   return (
-    <svg viewBox="0 0 1340 560" role="img" aria-label="価値から課題・体験・実装へのロジックツリー" className="block h-auto w-full min-w-[1200px]">
+    <svg viewBox="0 0 1480 600" role="img" aria-label="価値から課題・体験・実装へのロジックツリー" className="block h-auto w-full min-w-[980px]">
       <defs>
         <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" className="fill-muted-foreground" />
@@ -86,7 +98,8 @@ export function LogicTree() {
         {(
           [
             ["価値", COL.v.x],
-            ["課題", COL.k.x],
+            ["課題", COL.b.x],
+            ["課題の中身", COL.k.x],
             ["体験", COL.e.x],
             ["実装", COL.i.x],
             ["技術メモ", MEMO_X],
@@ -97,7 +110,7 @@ export function LogicTree() {
           </text>
         ))}
       </g>
-      <line x1={12} x2={1328} y1={318} y2={318} className="stroke-border" strokeDasharray="4 4" />
+      <line x1={190} x2={1468} y1={355} y2={355} className="stroke-border" strokeDasharray="4 4" />
       <g fill="none" className="stroke-muted-foreground/70" strokeWidth={1.4}>
         {EDGES.map(([a, b]) => {
           const A = N[a];
@@ -122,7 +135,7 @@ export function LogicTree() {
                 key={t}
                 x={c.x + 14}
                 y={top + i * lh}
-                className={`${st.ink} ${n.c === "v" && i === 0 ? "text-[15px] font-bold" : "text-[13px]"} ${n.c === "e" && i === n.t.length - 1 ? "font-bold" : ""}`}
+                className={`${st.ink} ${n.c === "v" && i === 0 ? "text-[15px] font-bold" : n.c === "b" && i === 0 ? "text-[13px] font-bold" : "text-[13px]"} ${n.c === "e" && i === n.t.length - 1 ? "font-bold" : ""}`}
               >
                 {t}
               </text>
