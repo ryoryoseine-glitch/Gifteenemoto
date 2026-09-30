@@ -8,14 +8,14 @@ import { MIN_CELL } from "@/lib/metrics";
  * 報告に使う項目（根拠：自治体の効果検証5件から「効果」だけを抜き出したもの）。
  * e街の発行〜消し込みの記録で出す6つと、使った直後のアンケートで取る項目。
  */
-export type ItemKey = "useRate" | "unused" | "users" | "where" | "who" | "compare" | "sat" | "add" | "first" | "again" | "spend";
+export type ItemKey = "useRate" | "given" | "users" | "where" | "who" | "compare" | "sat" | "add" | "first" | "again" | "spend";
 
 export type ItemDef = { key: ItemKey; label: string; from: "e街の記録" | "アンケート"; cite: string };
 
 export const ITEMS: ItemDef[] = [
+  { key: "given", label: "配布した世帯", from: "e街の記録", cite: "三鷹市 p.68・四日市市 p.46" },
+  { key: "users", label: "使用済み世帯", from: "e街の記録", cite: "世田谷区 p.3" },
   { key: "useRate", label: "利用率", from: "e街の記録", cite: "三鷹市 p.68・四日市市 p.46" },
-  { key: "unused", label: "使わなかった世帯", from: "e街の記録", cite: "四日市市 p.83" },
-  { key: "users", label: "実際に使った世帯", from: "e街の記録", cite: "世田谷区 p.3" },
   { key: "where", label: "どこで使われたか", from: "e街の記録", cite: "目黒区 p.3" },
   { key: "who", label: "誰に届いたか", from: "e街の記録", cite: "世田谷区 p.4〜5・目黒区 p.5" },
   { key: "compare", label: "前の期間との比較", from: "e街の記録", cite: "世田谷区 p.3・三鷹市 p.68" },
@@ -72,7 +72,6 @@ export function itemValues(c: CaseData, raw: RawData, projectId: string) {
     useRate: pct(funnel.usedHH, funnel.receivedHH),
     received: funnel.receivedHH,
     used: funnel.usedHH,
-    unused: funnel.receivedHH - funnel.usedHH,
     where: whereRows,
     who,
     compare: now && before ? { label: cur.label.replace(/^\d+年/, ""), prevLabel: prev.label.replace(/^\d+年/, ""), now: now.newUsed, before: before.newUsed } : null,

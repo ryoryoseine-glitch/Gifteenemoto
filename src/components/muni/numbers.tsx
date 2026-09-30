@@ -36,8 +36,8 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
   const hh = v.hh;
 
   const value: Record<ItemKey, { main: string; foot: string } | null> = {
-    useRate: v.useRate == null ? null : { main: pctText(v.useRate), foot: `利用した${hh} ${fmt(v.used)} ÷ 受け取った${hh} ${fmt(v.received)}` },
-    unused: { main: `${fmt(v.unused)}${hh}`, foot: `受け取ったが、まだ使っていない${hh}` },
+    useRate: v.useRate == null ? null : { main: pctText(v.useRate), foot: `使用済み${hh} ${fmt(v.used)} ÷ 配布した${hh} ${fmt(v.received)}` },
+    given: { main: `${fmt(v.received)}${hh}`, foot: `クーポンを受け取った${hh}` },
     users: { main: `${fmt(v.used)}${hh}`, foot: "一度でも消し込みがあった" },
     where: null,
     who: null,

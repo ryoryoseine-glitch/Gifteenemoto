@@ -45,8 +45,8 @@ function shareText(key: ItemKey, v: ReturnType<typeof itemValues>): string | nul
   switch (key) {
     case "useRate":
       return v.useRate == null ? null : pctText(v.useRate);
-    case "unused":
-      return `${fmt(v.unused)}${v.hh}`;
+    case "given":
+      return `${fmt(v.received)}${v.hh}`;
     case "users":
       return `${fmt(v.used)}${v.hh}`;
     case "compare":
