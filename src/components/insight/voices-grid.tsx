@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { EyeOff, Eye, Heart, MessageSquareQuote } from "lucide-react";
+import { EyeOff, Eye, MessageSquareQuote } from "lucide-react";
+import { PersonAvatar } from "@/components/insight/voice-bubble";
 import { cn } from "@/lib/utils";
 import { ago, publicAttrs } from "@/lib/format";
 import type { CaseData } from "@/data/types";
@@ -29,8 +30,6 @@ export function VoicesGrid({
   /** 最初に見せる件数（残りは「もっと見る」） */
   pageSize?: number;
 }) {
-  const liked = useApp((s) => s.liked);
-  const toggleLike = useApp((s) => s.toggleLike);
   const toggleHidden = useApp((s) => s.toggleVoiceHidden);
   const flashId = useApp((s) => s.flashVoiceId);
   const [theme, setTheme] = useState<string | null>(null);
@@ -97,52 +96,34 @@ export function VoicesGrid({
               ))}
             </div>
           )}
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="divide-y rounded-lg border bg-card">
             {list.map((v) => (
               <li
                 key={v.id}
                 className={cn(
-                  "flex flex-col rounded-lg border bg-card px-4 pt-4 pb-3",
+                  "grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 gap-y-2 px-4 py-3.5 md:grid-cols-[auto_12rem_minmax(0,1fr)_auto]",
                   flashId === v.id && "flash-in",
-                  v.hidden && "border-dashed opacity-55",
+                  v.hidden && "opacity-55",
                 )}
               >
-                <MessageSquareQuote className="mb-2 size-4 text-orange" />
-                <p className="flex-1 text-[14px] leading-relaxed">{v.text}</p>
-                <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 border-t pt-2.5 text-xs text-muted-foreground">
-                  <span>{mode === "muni" ? v.attrs : publicAttrs(c.id, v.attrs)}</span>
-                  <span aria-hidden>·</span>
-                  <span className="tnum">{ago(v.postedAt ?? now, now)}</span>
-                  {mode === "muni" ? (
-                    <span className="ml-auto inline-flex items-center gap-1 tnum">
-                      <Heart className="size-3" />
-                      {v.likes}
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      aria-pressed={!!liked[v.id]}
-                      onClick={() => toggleLike(v.id)}
-                      className={cn(
-                        "ml-auto inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 tnum transition-colors hover:border-orange hover:text-orange",
-                        liked[v.id] && "border-orange bg-orange-soft text-orange",
-                      )}
-                    >
-                      <Heart className={cn("size-3", liked[v.id] && "fill-current")} />
-                      共感 {v.likes}
-                    </button>
-                  )}
-                  <span className="flex w-full flex-wrap items-center gap-x-2 gap-y-1">
+                <PersonAvatar seed={v.id} withChild={c.id === "matsumoto"} />
+                <div className="text-xs text-muted-foreground">
+                  <p className="font-medium text-foreground/80">{mode === "muni" ? v.attrs : publicAttrs(c.id, v.attrs)}</p>
+                  <p className="mt-0.5 tnum">{ago(v.postedAt ?? now, now)}</p>
+                </div>
+                <div className="col-span-2 md:col-span-1">
+                  <p className="text-[14px] leading-relaxed">{v.text}</p>
+                  <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                     <span className="rounded bg-muted px-1.5 py-px whitespace-nowrap">{v.theme}</span>
                     {showGift && <span className="whitespace-nowrap">{giftName(v.giftId)}</span>}
-                    {mode === "muni" && (
-                      <Button variant="ghost" size="xs" className="ml-auto" onClick={() => toggleHidden(v.id)}>
-                        {v.hidden ? <Eye /> : <EyeOff />}
-                        {v.hidden ? "企業に出す" : "企業に出さない"}
-                      </Button>
-                    )}
-                  </span>
+                  </p>
                 </div>
+                {mode === "muni" && (
+                  <Button variant="ghost" size="xs" className="col-span-2 justify-self-end md:col-span-1" onClick={() => toggleHidden(v.id)}>
+                    {v.hidden ? <Eye /> : <EyeOff />}
+                    {v.hidden ? "企業に出す" : "企業に出さない"}
+                  </Button>
+                )}
               </li>
             ))}
           </ul>

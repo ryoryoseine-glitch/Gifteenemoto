@@ -9,7 +9,7 @@ import { publicAttrs } from "@/lib/format";
  * 期間を区切って数える。月は "2026-07" の形で比べる。
  */
 
-/** 報告の期間。from は含む・to は含まない（どちらも "YYYY-MM"） */
+/** 報告の期間。from は含む・to は含まない（どちらも "YYYY-MM-DD"） */
 export type Period = { key: string; label: string; from: string; to: string; partial: boolean };
 
 const nextMonth = (k: string) => {
@@ -28,7 +28,7 @@ export function periodsOf(p: Project, span: 1 | 3): Period[] {
     if (ks[0] > now) break;
     const last = ks[ks.length - 1];
     const label = ks.length === 1 ? `${ks[0].slice(0, 4)}年${monthLabel(ks[0])}` : `${ks[0].slice(0, 4)}年${monthLabel(ks[0])}〜${monthLabel(last)}`;
-    out.push({ key: ks[0], label, from: ks[0], to: nextMonth(last), partial: last >= now });
+    out.push({ key: ks[0], label, from: `${ks[0]}-01`, to: `${nextMonth(last)}-01`, partial: last >= now });
   }
   return out;
 }
@@ -58,7 +58,7 @@ export type PeriodStats = {
 };
 
 const inRange = (iso: string, from: string, to: string) => {
-  const k = monthKeyOf(iso);
+  const k = iso.slice(0, 10);
   return k >= from && k < to;
 };
 
@@ -122,4 +122,26 @@ export function periodVoices(c: CaseData, raw: RawData, projectId: string, per: 
     .filter((s) => s.projectId === projectId && s.publish && s.comment.trim() && !hidden[s.responseId] && inRange(s.answeredAt, per.from, per.to))
     .sort((a, b) => (a.answeredAt < b.answeredAt ? 1 : -1))
     .map((s) => ({ id: s.responseId, text: s.comment.trim(), attrs: publicAttrs(c.id, voiceAttrs(c, member.get(s.memberId))), at: s.answeredAt }));
+}
+
+/* ---------------- 自由な期間 ---------------- */
+
+const DAY = 86_400_000;
+const toMs = (d: string) => Date.parse(`${d}T00:00:00Z`);
+const fromMs = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+export const addDays = (d: string, n: number) => fromMs(toMs(d) + n * DAY);
+/** モックの「今日」 */
+export const TODAY = RAW_NOW.slice(0, 10);
+
+/** 日付の表示。to は含まない日 */
+export function rangeLabel(from: string, to: string) {
+  const last = addDays(to, -1);
+  const f = (d: string, withYear: boolean) => `${withYear ? `${Number(d.slice(0, 4))}年` : ""}${Number(d.slice(5, 7))}月${Number(d.slice(8, 10))}日`;
+  return `${f(from, true)}〜${f(last, last.slice(0, 4) !== from.slice(0, 4))}`;
+}
+
+/** 同じ長さの、すぐ前の期間 */
+export function previousRange(from: string, to: string) {
+  const len = Math.round((toMs(to) - toMs(from)) / DAY);
+  return { from: addDays(from, -len), to: from };
 }

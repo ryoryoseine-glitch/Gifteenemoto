@@ -4,7 +4,7 @@ import { Fragment, useState } from "react";
 import { Download } from "lucide-react";
 import { downloadWord } from "@/lib/word";
 import { fmt, pctText, yen } from "@/lib/format";
-import { periodStats, periodVoices, periodsOf, type PeriodStats } from "@/lib/period";
+import { TODAY, addDays, periodStats, periodVoices, periodsOf, previousRange, rangeLabel, type PeriodStats } from "@/lib/period";
 import { MIN_CELL, sum } from "@/lib/metrics";
 import { analyze, attrOptions } from "@/lib/analysis";
 import { itemValues } from "@/lib/items";
@@ -12,7 +12,6 @@ import { useApp, useCase } from "@/store/useApp";
 import { PageHeader } from "@/components/shell/parts";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 type Row = { label: string; unit: string; get: (s: PeriodStats) => number | null; rate?: boolean; total?: (s: PeriodStats) => number };
 
@@ -28,7 +27,7 @@ export function SimpleReport() {
   const keyOf = (d: { name: string; projectId: string }) => `${d.name}|${d.projectId}`;
   const keys = [...new Set(c.donors.map(keyOf))];
   const [key, setKey] = useState(keys[0]);
-  const [span, setSpan] = useState<1 | 3>(3);
+
   const cur = keys.includes(key) ? key : keys[0];
   const [name, projectId] = cur.split("|");
   const p = c.projects.find((x) => x.id === projectId)!;
@@ -36,11 +35,22 @@ export function SimpleReport() {
   const amount = sum(ds.map((d) => d.amount));
   const share = p.budget ? amount / p.budget : 0;
 
-  const periods = periodsOf(p, span);
-  const [perKey, setPerKey] = useState<string | null>(null);
-  const idx = Math.max(0, periods.findIndex((x) => x.key === perKey));
-  const per = periods[perKey ? idx : periods.length - 1];
-  const prev = periods[periods.indexOf(per) - 1];
+  // 期間は自由に選べる（開始日〜終了日。終了日を含む）。既定は直近の3か月の区切り
+  const start = periodsOf(p, 1)[0]?.from ?? TODAY;
+  const quarters = periodsOf(p, 3);
+  const lastQ = quarters[quarters.length - 1];
+  const endOfProject = addDays(periodsOf(p, 1).slice(-1)[0]?.to ?? addDays(TODAY, 1), -1);
+  const cap = (d: string) => (d > TODAY ? TODAY : d);
+  const [range, setRange] = useState<{ from: string; last: string } | null>(null);
+  const r = range ?? { from: lastQ?.from ?? start, last: cap(addDays(lastQ?.to ?? addDays(TODAY, 1), -1)) };
+  const per = { from: r.from, to: addDays(r.last, 1), label: rangeLabel(r.from, addDays(r.last, 1)), key: `${r.from}_${r.last}`, partial: r.last >= TODAY && endOfProject > TODAY };
+  const pr = previousRange(per.from, per.to);
+  const prev = pr.to > start ? { ...pr, from: pr.from < start ? start : pr.from, label: rangeLabel(pr.from < start ? start : pr.from, pr.to) } : null;
+  const presets = [
+    { label: "直近の3か月の区切り", from: lastQ?.from ?? start, last: cap(addDays(lastQ?.to ?? addDays(TODAY, 1), -1)) },
+    { label: "今月", from: `${TODAY.slice(0, 7)}-01`, last: TODAY },
+    { label: "事業開始から", from: start, last: cap(endOfProject) },
+  ];
 
   const now = periodStats(c, raw, projectId, per);
   const before = prev ? periodStats(c, raw, projectId, prev) : null;
@@ -88,12 +98,11 @@ export function SimpleReport() {
     points.push(`最初の報告。${per.label}に ${fmt(now.newReceived)}${hhWord}が受け取り、${fmt(now.newUsed)}${hhWord}が利用。`);
   }
 
-  const noteId = `${cur}|${per.key}|${span}`;
+  const noteId = `${cur}|${per.key}`;
   const items = keys.map((k) => {
     const [n, pid] = k.split("|");
     return { value: k, label: `${n.replace("株式会社", "")}｜${c.projects.find((x) => x.id === pid)?.name ?? ""}` };
   });
-  const perItems = periods.map((x) => ({ value: x.key, label: `${x.label}${x.partial ? "（途中）" : ""}` }));
 
   return (
     <div>
@@ -112,7 +121,7 @@ export function SimpleReport() {
       <div className="mb-5 flex flex-wrap items-end gap-3 rounded-lg border bg-card px-4 py-3">
         <label className="grid gap-1 text-xs text-muted-foreground">
           寄附企業と事業
-          <Select items={items} value={cur} onValueChange={(v) => v && (setKey(v as string), setPerKey(null))}>
+          <Select items={items} value={cur} onValueChange={(v) => v && setKey(v as string)}>
             <SelectTrigger className="min-w-[280px]" aria-label="寄附企業と事業">
               <SelectValue />
             </SelectTrigger>
@@ -125,32 +134,49 @@ export function SimpleReport() {
             </SelectContent>
           </Select>
         </label>
-        <label className="grid gap-1 text-xs text-muted-foreground">
-          報告の間隔
-          <ToggleGroup value={[String(span)]} onValueChange={(v) => v[0] && (setSpan(Number(v[0]) as 1 | 3), setPerKey(null))} variant="outline" size="sm" spacing={0}>
-            <ToggleGroupItem value="3" className="px-3 text-xs data-pressed:bg-primary data-pressed:text-primary-foreground">
-              3か月ごと
-            </ToggleGroupItem>
-            <ToggleGroupItem value="1" className="px-3 text-xs data-pressed:bg-primary data-pressed:text-primary-foreground">
-              毎月
-            </ToggleGroupItem>
-          </ToggleGroup>
-        </label>
-        <label className="grid gap-1 text-xs text-muted-foreground">
-          期間
-          <Select items={perItems} value={per.key} onValueChange={(v) => v && setPerKey(v as string)}>
-            <SelectTrigger className="min-w-[200px]" aria-label="期間">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent alignItemWithTrigger={false}>
-              {perItems.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </label>
+        <div className="grid gap-1 text-xs text-muted-foreground">
+          期間（終了日を含む）
+          <div className="flex items-center gap-1.5">
+            <input
+              id="report-from"
+              type="date"
+              value={r.from}
+              min={start}
+              max={r.last}
+              onChange={(e) => e.target.value && setRange({ from: e.target.value, last: r.last })}
+              className="h-8 rounded-md border bg-card px-2 text-[13px] text-foreground tnum"
+              aria-label="開始日"
+            />
+            <span>〜</span>
+            <input
+              id="report-last"
+              type="date"
+              value={r.last}
+              min={r.from}
+              max={cap(endOfProject)}
+              onChange={(e) => e.target.value && setRange({ from: r.from, last: e.target.value })}
+              className="h-8 rounded-md border bg-card px-2 text-[13px] text-foreground tnum"
+              aria-label="終了日"
+            />
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1.5 pb-0.5">
+          {presets.map((x) => (
+            <button
+              key={x.label}
+              type="button"
+              onClick={() => setRange({ from: x.from, last: x.last })}
+              className={
+                x.from === r.from && x.last === r.last
+                  ? "rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground"
+                  : "rounded-full border px-3 py-1 text-xs text-muted-foreground hover:text-foreground"
+              }
+            >
+              {x.label}
+            </button>
+          ))}
+        </div>
+        <p className="w-full text-xs text-muted-foreground">前の期間：{prev ? `${prev.label}（同じ長さのすぐ前）` : "なし（事業開始より前）"}</p>
       </div>
 
       <article data-report-doc className="mx-auto max-w-[820px] rounded-lg border bg-white px-8 py-8 text-[#232323] shadow-sm sm:px-12">
@@ -177,7 +203,7 @@ export function SimpleReport() {
           </tbody>
         </table>
 
-        <H3>2. 実績と効果（{per.label.replace(/^\d+年/, "")}）</H3>
+        <H3>2. 実績と効果（{per.label}）</H3>
         <table className="w-full text-[13px] tabular-nums">
           <thead>
             <tr className="text-left text-[12px] text-[#666]">
