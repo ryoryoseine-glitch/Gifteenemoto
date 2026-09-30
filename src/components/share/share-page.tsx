@@ -10,13 +10,15 @@ import { useApp, useCase, useExtra } from "@/store/useApp";
 import { GiftPhoto, PhotoCredits } from "@/components/gift/gift-photo";
 import { VoiceBubble } from "@/components/insight/voice-bubble";
 import { LIVE_VOICES } from "@/data/live-voices";
-import { SharedNumbers } from "./shared-numbers";
+import { useSharedStats } from "./shared-numbers";
 
 /** 社内共有ページ（ログインなし）。ギフトの写真がめくれていき、その下に感謝の声 */
 export function SharePage() {
   const c = useCase();
   const extra = useExtra();
   const hiddenForShare = useApp((s) => s.hiddenForShare);
+  const pidsForStats = useMemo(() => corpSupports(c, extra).filter((g) => g.base.status === "active").map((g) => g.base.id), [c, extra]);
+  const stats = useSharedStats(c, pidsForStats);
 
   // 支援している事業（寄附の割合で按分する考え方。数字は事業全体）
   const supports = useMemo(() => corpSupports(c, extra).filter((g) => g.base.status === "active"), [c, extra]);
@@ -105,6 +107,12 @@ export function SharePage() {
                   <dt className="text-white/70">社員からの共感</dt>
                   <dd className="text-xl font-bold tnum">{fmt(sum(voices.map((v) => v.likes)))}</dd>
                 </div>
+                {stats.map((st) => (
+                  <div key={st.key} className={st.wide ? "basis-full" : undefined}>
+                    <dt className="text-white/70">{st.label}</dt>
+                    <dd className={st.wide ? "text-base font-bold" : "text-xl font-bold tnum"}>{st.value}</dd>
+                  </div>
+                ))}
               </dl>
             </div>
             {voices[0] && (
@@ -142,7 +150,6 @@ export function SharePage() {
         </section>
       )}
 
-      <SharedNumbers c={c} projectIds={pids} />
 
       <Events c={c} />
 
