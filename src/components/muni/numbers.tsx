@@ -5,7 +5,9 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fmt, pctText, yen } from "@/lib/format";
 import { analyze, attrOptions } from "@/lib/analysis";
-import { COMPARE_OPTIONS, ITEMS, itemValues, rawForCoupon, type CompareMode, type ItemKey } from "@/lib/items";
+import { COMPARE_OPTIONS, ITEMS, itemValues, type CompareMode, type ItemKey } from "@/lib/items";
+import { CASE_OPTIONS } from "@/data";
+import type { CaseId } from "@/data/types";
 import { MIN_CELL } from "@/lib/metrics";
 import { useApp, useCase } from "@/store/useApp";
 import { PageHeader, Section } from "@/components/shell/parts";
@@ -26,12 +28,11 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
   const projectId = projects.some((p) => p.id === pid) ? pid : projects[0].id;
   const compareMode = useApp((s) => s.compareMode);
   const setCompareMode = useApp((s) => s.setCompareMode);
-  // クーポン（券種）で絞る。企業は自社のクーポンだけ選べる
-  const coupons = c.donors.filter((d) => d.projectId === projectId && (!corp || d.name === c.corp.name));
-  const [coupon, setCoupon] = useState<string>("all");
-  const couponId = coupons.some((d) => d.id === coupon) ? coupon : null;
-  const rawF = rawForCoupon(raw, couponId);
-  const couponItems = [{ value: "all", label: "すべてのクーポン" }, ...coupons.map((d) => ({ value: d.id, label: corp ? d.giftName : `${d.giftName}（${d.name.replace("株式会社", "")}）` }))];
+  // 1段目は事業（子育て支援・観光支援）、2段目はその下のクーポン
+  const cases = useApp((s) => s.cases);
+  const setCase = useApp((s) => s.setCase);
+  const businessItems = (corp ? CASE_OPTIONS.filter((o) => o.value === c.id) : CASE_OPTIONS).map((o) => ({ value: o.value, label: `${cases[o.value].kind}支援事業（${cases[o.value].muniShort}）` }));
+  const rawF = raw;
   const v = itemValues(c, rawF, projectId, compareMode);
   const attrs = attrOptions(c);
   const [attr, setAttr] = useState(attrs[0]?.key ?? "");
@@ -40,7 +41,7 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
   const who = analyze(c, rawF, projectId, attrKey).rows.filter((r) => r.value !== "ひもづけなし" && (!corp || r.receivedHH >= MIN_CELL));
   const whoMax = Math.max(1, ...who.map((r) => r.receivedHH));
   const whereMax = Math.max(1, ...v.where.map(([, n]) => n));
-  const items = projects.map((p) => ({ value: p.id, label: p.name }));
+  const items = projects.map((p) => ({ value: p.id, label: p.status === "closed" ? `${p.name}（終了）` : p.name }));
   const hh = v.hh;
 
   const value: Record<ItemKey, { main: string; foot: string; dist?: { label: string; pct: number }[] } | null> = {
@@ -70,35 +71,41 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
         title={corp ? "寄附した事業の数字と声" : "数字と声"}
         sub={
           corp
-            ? `${c.muni}の事業全体の数字。チェックした項目を社内共有ページに公開`
+            ? `${c.muni}のクーポン全体の数字。チェックした項目を社内共有ページに公開`
             : "e街の発行〜消し込みの記録と、使った直後のアンケートの結果。寄附企業のダッシュボードにも同じ数字が出る"
         }
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <Select items={items} value={projectId} onValueChange={(x) => x && (setPid(x as string), setCoupon("all"))}>
-              <SelectTrigger className="min-w-[220px] bg-card" aria-label="事業">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent alignItemWithTrigger={false}>
-                {items.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select items={couponItems} value={couponId ?? "all"} onValueChange={(x) => x && setCoupon(x as string)}>
-              <SelectTrigger className="min-w-[220px] bg-card" aria-label="クーポン">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent alignItemWithTrigger={false}>
-                {couponItems.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              事業
+              <Select items={businessItems} value={c.id} onValueChange={(x) => x && setCase(x as CaseId)}>
+                <SelectTrigger className="min-w-[220px] bg-card" aria-label="事業">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent alignItemWithTrigger={false}>
+                  {businessItems.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              クーポン
+              <Select items={items} value={projectId} onValueChange={(x) => x && setPid(x as string)}>
+                <SelectTrigger className="min-w-[260px] bg-card" aria-label="クーポン">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent alignItemWithTrigger={false}>
+                  {items.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
           </div>
         }
       />
@@ -186,7 +193,7 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
       </div>
 
       <Section title={<span className="flex items-center gap-2">声 <SourceTag from="アンケート" /></span>} meta={<span className="text-xs text-muted-foreground">{corp ? "公開に同意した声だけ。属性はぼかして表示。「社内共有ページに出さない」にチェックした声は社員に見えない" : "不適切なものは「企業に出さない」にチェック。企業のダッシュボードと社内共有ページから消える"}</span>}>
-        <VoicesGrid c={c} projectIds={[projectId]} giftIds={couponId ? [couponId] : undefined} showGift mode={corp ? "corp" : "muni"} pageSize={6} />
+        <VoicesGrid c={c} projectIds={[projectId]} showGift mode={corp ? "corp" : "muni"} pageSize={6} />
       </Section>
     </div>
   );

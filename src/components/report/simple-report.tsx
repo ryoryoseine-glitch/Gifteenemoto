@@ -120,9 +120,9 @@ export function SimpleReport() {
 
       <div className="mb-5 flex flex-wrap items-end gap-3 rounded-lg border bg-card px-4 py-3">
         <label className="grid gap-1 text-xs text-muted-foreground">
-          寄附企業と事業
+          寄附企業とクーポン
           <Select items={items} value={cur} onValueChange={(v) => v && setKey(v as string)}>
-            <SelectTrigger className="min-w-[280px]" aria-label="寄附企業と事業">
+            <SelectTrigger className="min-w-[280px]" aria-label="寄附企業とクーポン">
               <SelectValue />
             </SelectTrigger>
             <SelectContent alignItemWithTrigger={false}>
