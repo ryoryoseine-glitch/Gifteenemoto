@@ -46,6 +46,10 @@ export type PeriodStats = {
   satTop2: number | null;
   /** 「このクーポンがなければ利用しなかった」の割合 % */
   notWithout: number | null;
+  /** 初めて利用した割合 % */
+  first: number | null;
+  /** また利用したい（5段階の上位2つ）の割合 % */
+  again: number | null;
   /** 期間の終わりまでの累計 */
   totalReceived: number;
   totalUsed: number;
@@ -89,6 +93,10 @@ export function periodStats(c: CaseData, raw: RawData, projectId: string, per: P
   const sats = satQ ? resp.map((s) => s.answers.sat).filter((v): v is number => typeof v === "number") : [];
   const adds = addQ ? resp.map((s) => s.answers.add).filter((v): v is string => typeof v === "string") : [];
   const lastOpt = addQ?.opts?.[addQ.opts.length - 1];
+  const firstQ = c.questions.find((q) => q.id === "first" || q.id === "firstvisit");
+  const firsts = firstQ ? resp.map((s) => s.answers[firstQ.id]).filter((v): v is string => typeof v === "string") : [];
+  const agains = resp.map((s) => s.answers.again).filter((v): v is number => typeof v === "number");
+  const rate = (a: number, b: number) => (b ? Math.round((a / b) * 1000) / 10 : null);
 
   const totalReceived = count(firstRecv, "0000-00");
   const totalUsed = count(firstUse, "0000-00");
@@ -99,6 +107,8 @@ export function periodStats(c: CaseData, raw: RawData, projectId: string, per: P
     responses: resp.length,
     satTop2: sats.length ? Math.round((sats.filter((v) => v >= 4).length / sats.length) * 1000) / 10 : null,
     notWithout: adds.length ? Math.round((adds.filter((v) => v === lastOpt).length / adds.length) * 1000) / 10 : null,
+    first: rate(firsts.filter((v) => v === firstQ?.opts?.[0]).length, firsts.length),
+    again: rate(agains.filter((v) => v >= 4).length, agains.length),
     totalReceived,
     totalUsed,
     useRate: totalReceived ? Math.round((totalUsed / totalReceived) * 1000) / 10 : 0,

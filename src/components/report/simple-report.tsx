@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Download } from "lucide-react";
 import { downloadWord } from "@/lib/word";
 import { fmt, pctText, yen } from "@/lib/format";
 import { periodStats, periodVoices, periodsOf, type PeriodStats } from "@/lib/period";
-import { sum } from "@/lib/metrics";
+import { MIN_CELL, sum } from "@/lib/metrics";
+import { analyze, attrOptions } from "@/lib/analysis";
+import { itemValues } from "@/lib/items";
 import { useApp, useCase } from "@/store/useApp";
 import { PageHeader } from "@/components/shell/parts";
 import { Button } from "@/components/ui/button";
@@ -46,14 +48,19 @@ export function SimpleReport() {
 
   const hhWord = c.kind === "観光" ? "人" : "世帯";
   const addWord = c.kind === "観光" ? "なければ来なかった" : "なければ利用しなかった";
-  const rows: Row[] = [
-    { label: `新しく受け取った${hhWord}`, unit: hhWord, get: (s) => s.newReceived, total: (s) => s.totalReceived },
-    { label: `新しく利用した${hhWord}`, unit: hhWord, get: (s) => s.newUsed, total: (s) => s.totalUsed },
-    { label: "利用の数", unit: "枚", get: (s) => s.uses },
-    { label: "アンケートの回答", unit: "件", get: (s) => s.responses },
-    { label: "満足・やや満足", unit: "%", get: (s) => s.satTop2, rate: true },
-    { label: addWord, unit: "%", get: (s) => s.notWithout, rate: true },
+  const rows: (Row & { group: "e街の記録" | "アンケート" })[] = [
+    { group: "e街の記録", label: `新しく受け取った${hhWord}`, unit: hhWord, get: (s) => s.newReceived, total: (s) => s.totalReceived },
+    { group: "e街の記録", label: `新しく利用した${hhWord}`, unit: hhWord, get: (s) => s.newUsed, total: (s) => s.totalUsed },
+    { group: "e街の記録", label: "利用の数", unit: "枚", get: (s) => s.uses },
+    { group: "アンケート", label: "回答数", unit: "件", get: (s) => s.responses },
+    { group: "アンケート", label: "満足・やや満足", unit: "%", get: (s) => s.satTop2, rate: true },
+    { group: "アンケート", label: addWord, unit: "%", get: (s) => s.notWithout, rate: true },
+    { group: "アンケート", label: "初めて利用した", unit: "%", get: (s) => s.first, rate: true },
+    { group: "アンケート", label: "また利用したい", unit: "%", get: (s) => s.again, rate: true },
   ];
+  const whoAttr = attrOptions(c)[0];
+  const who = analyze(c, raw, projectId, whoAttr?.key ?? "").rows.filter((r) => r.value !== "ひもづけなし" && r.receivedHH >= MIN_CELL);
+  const where = itemValues(c, raw, projectId).where.slice(0, 5);
 
   const diffText = (r: Row) => {
     const a = r.get(now);
@@ -154,64 +161,111 @@ export function SimpleReport() {
         </h2>
         <p className="mt-1 text-[12px] text-[#666]">{c.muni}</p>
 
-        <h3 className="mt-7 mb-2 border-b pb-1 text-[14px] font-bold">1. ご寄附と事業</h3>
+        <H3>1. ご寄附と事業</H3>
         <table className="w-full text-[13px]">
           <tbody>
             <Tr k="ご寄附">
               {yen(amount)}（{ds.map((d) => d.donatedOn).filter(Boolean).join("・")}）
             </Tr>
-            <Tr k="事業費に占める割合">
-              {pctText(share * 100)}（事業費 {yen(p.budget)}）
+            <Tr k="事業費">
+              {yen(p.budget)}（ご寄附の割合 {pctText(share * 100)}）
             </Tr>
             <Tr k="ご寄附で届けたもの">{ds.map((d) => d.giftName).join("・")}</Tr>
+            <Tr k="事業の目的・対象">
+              <Fill>地域再生計画の事業の目的と対象</Fill>
+            </Tr>
           </tbody>
         </table>
 
-        <h3 className="mt-7 mb-2 border-b pb-1 text-[14px] font-bold">2. この期間の数字</h3>
+        <H3>2. 実績と効果（{per.label.replace(/^\d+年/, "")}）</H3>
         <table className="w-full text-[13px] tabular-nums">
           <thead>
             <tr className="text-left text-[12px] text-[#666]">
               <th className="py-1.5 font-normal">項目</th>
-              <th className="py-1.5 text-right font-normal">{per.label.replace(/^\d+年/, "")}</th>
+              <th className="py-1.5 text-right font-normal">この期間</th>
               <th className="py-1.5 text-right font-normal">前の期間</th>
               <th className="py-1.5 text-right font-normal">変化</th>
               <th className="py-1.5 text-right font-normal">事業開始からの累計</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.label} className="border-t">
-                <td className="py-1.5">{r.label}</td>
-                <td className="py-1.5 text-right font-bold">{val(r.get(now), r)}</td>
-                <td className="py-1.5 text-right text-[#666]">{before ? val(r.get(before), r) : "—"}</td>
-                <td className="py-1.5 text-right">{diffText(r)}</td>
-                <td className="py-1.5 text-right text-[#666]">{r.total ? `${fmt(r.total(now))}${r.unit}` : "—"}</td>
-              </tr>
+            {rows.map((r, i) => (
+              <Fragment key={r.label}>
+                {(i === 0 || rows[i - 1].group !== r.group) && (
+                  <tr>
+                    <td colSpan={5} className="pt-3 pb-1 text-[12px] font-bold text-[#666]">
+                      {r.group === "e街の記録" ? "発行〜消し込みの記録から" : "使った直後のアンケートから"}
+                    </td>
+                  </tr>
+                )}
+                <tr className="border-t">
+                  <td className="py-1.5">{r.label}</td>
+                  <td className="py-1.5 text-right font-bold">{val(r.get(now), r)}</td>
+                  <td className="py-1.5 text-right text-[#666]">{before ? val(r.get(before), r) : "—"}</td>
+                  <td className="py-1.5 text-right">{diffText(r)}</td>
+                  <td className="py-1.5 text-right text-[#666]">{r.total ? `${fmt(r.total(now))}${r.unit}` : "—"}</td>
+                </tr>
+                {r.label === "利用の数" && (
+                  <tr className="border-t">
+                    <td className="py-1.5">利用率（累計）</td>
+                    <td className="py-1.5 text-right font-bold" colSpan={4}>
+                      {pctText(now.useRate)}
+                      <span className="ml-2 font-normal text-[#666]">
+                        利用した{hhWord} {fmt(now.totalUsed)} ÷ 受け取った{hhWord} {fmt(now.totalReceived)}・まだ使っていない {fmt(now.totalReceived - now.totalUsed)}
+                        {hhWord}
+                      </span>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
-            <tr className="border-t">
-              <td className="py-1.5">利用率（累計）</td>
-              <td className="py-1.5 text-right font-bold" colSpan={4}>
-                {pctText(now.useRate)}
-                <span className="ml-2 font-normal text-[#666]">
-                  利用した{hhWord} {fmt(now.totalUsed)} ÷ 受け取った{hhWord} {fmt(now.totalReceived)}
-                </span>
-              </td>
-            </tr>
           </tbody>
         </table>
         <p className="mt-2 text-[12px] text-[#666]">
-          うち貴社のご寄附の割合（{pctText(share * 100)}）で按分すると、利用した{hhWord}は累計 約{fmt(Math.round(now.totalUsed * share))}
+          数字は事業全体。貴社のご寄附の割合（{pctText(share * 100)}）で按分すると、利用した{hhWord}は累計 約{fmt(Math.round(now.totalUsed * share))}
           {hhWord}。
         </p>
 
-        <h3 className="mt-7 mb-2 border-b pb-1 text-[14px] font-bold">3. 前の期間からの主な変化</h3>
+        <div className="mt-5 grid gap-6 sm:grid-cols-2">
+          <div>
+            <p className="mb-1 text-[12px] font-bold text-[#666]">誰に届いたか（{whoAttr?.label}・累計）</p>
+            <table className="w-full text-[13px] tabular-nums">
+              <tbody>
+                {who.map((r) => (
+                  <tr key={r.value} className="border-t">
+                    <td className="py-1">{r.value}</td>
+                    <td className="py-1 text-right">
+                      {fmt(r.receivedHH)}
+                      {hhWord}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <p className="mb-1 text-[12px] font-bold text-[#666]">どこで使われたか（上位5・累計）</p>
+            <table className="w-full text-[13px] tabular-nums">
+              <tbody>
+                {where.map(([k, n]) => (
+                  <tr key={k} className="border-t">
+                    <td className="py-1">{k}</td>
+                    <td className="py-1 text-right">{fmt(n)}枚</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <H3>3. 前の期間からの主な変化</H3>
         <ul className="list-disc space-y-1 pl-5 text-[13px]">
           {points.map((t) => (
             <li key={t}>{t}</li>
           ))}
         </ul>
 
-        <h3 className="mt-7 mb-2 border-b pb-1 text-[14px] font-bold">4. 受け取った人の声（この期間・公開に同意したもの）</h3>
+        <H3>4. 利用者の声（この期間・公開に同意したもの）</H3>
         {voices.length ? (
           <ul className="space-y-2 text-[13px]">
             {voices.map((v) => (
@@ -224,27 +278,51 @@ export function SimpleReport() {
           <p className="text-[13px] text-[#666]">この期間に公開に同意した声はありません。</p>
         )}
 
-        <h3 className="mt-7 mb-2 border-b pb-1 text-[14px] font-bold">5. 市から</h3>
+        <H3>5. 担当者の声・写真</H3>
         <textarea
           value={notes[noteId] ?? ""}
           onChange={(e) => setNote(noteId, e.target.value)}
-          placeholder="【自治体が記入】お礼、この期間の取り組み、次の期間の予定など"
+          placeholder="【自治体が記入】お礼、この期間の取り組み、次の期間の予定"
           rows={4}
-          className="w-full rounded-md border border-dashed border-[#e0612f]/60 bg-[#fdf1ec]/60 px-3 py-2 text-[13px] print:hidden"
+          className="w-full rounded-md border border-dashed border-[#e0612f]/60 bg-[#fdf1ec]/60 px-3 py-2 text-[13px]"
           data-word-skip
         />
         <p data-fill className="hidden whitespace-pre-wrap" data-word-show>
-          {notes[noteId] || "【自治体が記入】お礼、この期間の取り組み、次の期間の予定など"}
+          {notes[noteId] || "【自治体が記入】お礼、この期間の取り組み、次の期間の予定"}
         </p>
+        <div className="mt-2">
+          <Fill>事業の写真（転載の可否・撮影者）</Fill>
+        </div>
 
-        <h3 className="mt-7 mb-2 border-b pb-1 text-[14px] font-bold">数字の出どころ</h3>
+        <H3>数字の出どころ</H3>
         <ul className="list-disc space-y-0.5 pl-5 text-[12px] text-[#555]">
-          <li>受け取り・利用：e街の発行・受取実績と利用実績（{c.kind === "観光" ? "会員ごと" : "世帯ごと。同じ世帯の家族のアカウントは1世帯"}に、初めて受け取った・利用した月で数える）</li>
-          <li>満足度・{addWord}：利用した直後のアンケート（この期間の回答 {fmt(now.responses)}件）</li>
-          <li>数字は事業全体。貴社分は事業費に占めるご寄附の割合で按分</li>
+          <li>受け取り・利用：e街の発行〜消し込みの記録（{c.kind === "観光" ? "会員ごと" : "世帯ごと。同じ世帯の家族のアカウントは1世帯"}に、初めて受け取った・利用した月で数える）</li>
+          <li>誰に届いたか：会員情報の登録項目。10件未満の区分は出さない</li>
+          <li>満足度など：利用した直後のアンケート（giftee Survey）。この期間の回答 {fmt(now.responses)}件</li>
           <li>声は公開に同意したものだけ。属性はぼかして表示</li>
         </ul>
       </article>
+
+      <section className="mx-auto mt-6 max-w-[820px] rounded-lg border bg-card px-6 py-5 text-[13px]" aria-label="報告書の項目の根拠">
+        <p className="font-bold">この報告書の項目の根拠</p>
+        <ul className="mt-2 space-y-1.5 text-muted-foreground">
+          <li>
+            1・4・5（寄附・事業・件数・声・写真）：宇和島市 企業版ふるさと納税 実績報告書 p.2〜15{" "}
+            <a className="text-link hover:underline" href="https://www.city.uwajima.ehime.jp/uploaded/attachment/62443.pdf" target="_blank" rel="noreferrer">
+              PDF
+            </a>
+          </li>
+          {SOURCES.map((x) => (
+            <li key={x.name}>
+              2（{x.items}）：{x.name}{" "}
+              <a className="text-link hover:underline" href={x.url} target="_blank" rel="noreferrer">
+                PDF
+              </a>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 text-xs text-muted-foreground">Word には書き出さない（自治体の画面だけ）</p>
+      </section>
     </div>
   );
 }
@@ -257,3 +335,24 @@ function Tr({ k, children }: { k: string; children: React.ReactNode }) {
     </tr>
   );
 }
+
+function H3({ children }: { children: React.ReactNode }) {
+  return <h3 className="mt-7 mb-2 border-b pb-1 text-[14px] font-bold">{children}</h3>;
+}
+
+function Fill({ children }: { children: React.ReactNode }) {
+  return (
+    <span data-fill className="block rounded-md border border-dashed border-[#e0612f]/60 bg-[#fdf1ec]/60 px-3 py-1.5 text-[13px] text-[#c8542a]">
+      【自治体が記入】{children}
+    </span>
+  );
+}
+
+/** 2 の項目の根拠（電子クーポン・商品券の効果検証から効果だけを抜き出したもの） */
+const SOURCES = [
+  { name: "世田谷区 せたがやPay 効果検証 p.2〜6", items: "使った人の数・誰に届いたか・前回比・満足度・続けたいか", url: "https://www.city.setagaya.lg.jp/documents/25180/1110_07.pdf" },
+  { name: "三鷹市 みたかデジタル商品券 事業実施報告書 p.68・p.103", items: "利用率・前回比・初めて", url: "https://www.city.mitaka.lg.jp/c_service/112/attached/attach_112114_2.pdf" },
+  { name: "四日市市 よんデジ券 事業報告書 p.46・p.83・p.110", items: "利用率・使わなかった人・追加性・声", url: "https://www.city.yokkaichi.lg.jp/www/contents/1693443279922/files/yondezi.pdf" },
+  { name: "目黒区 めぐろデジタル商品券 効果検証 概要版 p.3〜5", items: "どこで使われたか・誰に届いたか・初めて・追加性", url: "https://www.city.meguro.tokyo.jp/documents/16727/gaiyo.pdf" },
+  { name: "神奈川県 かながわPay 第3弾 アンケートレポート p.18・p.41〜42", items: "続けたいか・回答数", url: "https://www.pref.kanagawa.jp/documents/110308/7-3_anke-to3v2.pdf" },
+];

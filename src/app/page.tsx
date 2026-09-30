@@ -52,17 +52,20 @@ export default function Home() {
                 <Link href="/phone" className="font-bold text-link hover:underline">
                   使った直後の1分アンケート
                 </Link>
-                （満足度・なければ利用しなかったか・ひとこと）
+                （Survey を流用。満足度・なければ利用しなかったか・初めてか・また利用したいか・ひとこと）→ お礼
               </td>
             </tr>
             <tr className="border-b">
               <td className="px-5 py-3 font-medium whitespace-nowrap">自治体</td>
               <td className="px-3 py-3 text-muted-foreground">e街の管理画面（発行・受取・利用実績、会員情報のデータ出力）、寄附の受領</td>
               <td className="px-5 py-3">
-                <Link href="/muni/report" className="font-bold text-link hover:underline">
-                  簡易報告書の作成
+                <Link href="/muni/numbers" className="font-bold text-link hover:underline">
+                  数字と声
                 </Link>
-                （期間を選ぶ → 差分入りの原案 → Word）、アンケートの設問と結果、声の確認
+                （Survey のダッシュボードを流用。社内共有ページに出す項目を選ぶ）、
+                <Link href="/muni/report" className="font-bold text-link hover:underline">
+                  報告書の Word 出力
+                </Link>
               </td>
             </tr>
             <tr>
@@ -72,7 +75,7 @@ export default function Home() {
                 <Link href="/share" className="font-bold text-link hover:underline">
                   社内共有ページ
                 </Link>
-                （声がリアルタイムに届く・アンケートの結果）。報告書は自治体から届く
+                （1枚。声と、自治体が選んだ数字）。報告書は自治体から Word で届く
               </td>
             </tr>
           </tbody>

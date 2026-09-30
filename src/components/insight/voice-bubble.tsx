@@ -1,10 +1,8 @@
 "use client";
 
-import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ago, publicAttrs } from "@/lib/format";
 import type { Donor, Voice } from "@/data/types";
-import { useApp } from "@/store/useApp";
 import { GiftPhoto } from "@/components/gift/gift-photo";
 
 const TINTS = ["#fde2d6", "#dcebf7", "#e3f2e6", "#fbe4ee", "#efe7fb", "#fdf0d0"];
@@ -33,8 +31,6 @@ export function PersonAvatar({ seed, withChild }: { seed: string; withChild: boo
 
 /** 吹き出しの声（企業・社員向け。属性はぼかして出す） */
 export function VoiceBubble({ v, gift, caseId, now, fresh }: { v: Voice; gift?: Donor; caseId: string; now: number; fresh?: boolean }) {
-  const liked = useApp((s) => s.liked[v.id]);
-  const toggleLike = useApp((s) => s.toggleLike);
   return (
     <li className={cn("mb-4 break-inside-avoid", fresh && "rise")}>
       <div className="flex items-start gap-3">
@@ -47,27 +43,14 @@ export function VoiceBubble({ v, gift, caseId, now, fresh }: { v: Voice; gift?: 
           </p>
           <div className={cn("relative rounded-2xl rounded-tl-sm border bg-card px-4 py-3 shadow-sm", fresh && "flash-in")}>
             <p className="text-[15px] leading-relaxed">{v.text}</p>
-            <div className="mt-2.5 flex items-center justify-between gap-2">
+            <div className="mt-2.5 flex items-center gap-2">
               {gift ? (
                 <span className="inline-flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
                   <GiftPhoto id={gift.photo} className="size-5 shrink-0 rounded" />
                   <span className="truncate">{gift.giftName}</span>
                 </span>
-              ) : (
-                <span />
-              )}
-              <button
-                type="button"
-                aria-pressed={!!liked}
-                onClick={() => toggleLike(v.id)}
-                className={cn(
-                  "inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground tnum transition-colors hover:border-orange hover:text-orange",
-                  liked && "border-orange bg-orange-soft text-orange",
-                )}
-              >
-                <Heart className={cn("size-3", liked && "fill-current")} />
-                共感 {v.likes}
-              </button>
+              ) : null}
+
             </div>
           </div>
         </div>

@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Heart, Pause, Play } from "lucide-react";
+import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ago, fmt, pct, pctText, publicAttrs, yen } from "@/lib/format";
+import { ago, fmt, pctText, publicAttrs, yen } from "@/lib/format";
 import type { CaseData } from "@/data/types";
-import { MIN_CELL, corpSupports, giftProject, projectTotals, sum } from "@/lib/metrics";
+import { corpSupports, giftProject, projectTotals, sum } from "@/lib/metrics";
+import { ITEMS, itemValues, type ItemKey } from "@/lib/items";
 import { useApp, useCase, useExtra } from "@/store/useApp";
 import { GiftPhoto, PhotoCredits } from "@/components/gift/gift-photo";
 import { VoiceBubble } from "@/components/insight/voice-bubble";
@@ -39,12 +40,11 @@ export function SharePage() {
     })),
   ];
   const [i, setI] = useState(0);
-  const [playing, setPlaying] = useState(true);
   useEffect(() => {
-    if (!playing || slides.length < 2) return;
+    if (slides.length < 2) return;
     const t = setInterval(() => setI((x) => (x + 1) % slides.length), 4500);
     return () => clearInterval(t);
-  }, [playing, slides.length]);
+  }, [slides.length]);
   const cur = slides[i % Math.max(slides.length, 1)];
   const prev = slides[(i - 1 + slides.length) % Math.max(slides.length, 1)];
 
@@ -99,10 +99,7 @@ export function SharePage() {
                   <dt className="text-white/70">届いた声</dt>
                   <dd className="text-xl font-bold tnum">{fmt(voices.length)}</dd>
                 </div>
-                <div>
-                  <dt className="text-white/70">社員からの共感</dt>
-                  <dd className="text-xl font-bold tnum">{fmt(sum(voices.map((v) => v.likes)))}</dd>
-                </div>
+
               </dl>
             </div>
             {voices[0] && (
@@ -122,25 +119,10 @@ export function SharePage() {
           <p className="absolute bottom-4 left-6 z-20 text-xs text-white/80 sm:left-10">
             {cur.eyebrow}　<span className="font-bold text-white">{cur.title}</span>
           </p>
-          <div className="absolute right-4 bottom-3.5 z-20 flex items-center gap-2">
-            {slides.map((sl, k) => (
-              <button
-                key={sl.id}
-                type="button"
-                aria-label={`${sl.title}を表示`}
-                aria-current={k === i % slides.length}
-                onClick={() => setI(k)}
-                className={cn("h-1.5 rounded-full bg-white/50 transition-all", k === i % slides.length ? "w-6 bg-white" : "w-1.5")}
-              />
-            ))}
-            <button type="button" onClick={() => setPlaying(!playing)} aria-label={playing ? "止める" : "動かす"} className="ml-1 grid size-7 place-items-center rounded-full bg-black/40 text-white">
-              {playing ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
-            </button>
-          </div>
         </section>
       )}
 
-      <SurveyFindings c={c} projectIds={pids} />
+      <SharedNumbers c={c} projectIds={pids} />
 
       {/* 感謝の声（リアルタイムに届く） */}
       <h2 className="mt-12 text-center text-lg font-bold">受け取った方から届いた「ありがとう」</h2>
@@ -173,44 +155,65 @@ function Slide({ s, still }: { s: { photo: string; title: string }; still?: bool
   );
 }
 
-/** アンケートでわかったこと（企業に出してよい設問だけ。数字は事業全体） */
-function SurveyFindings({ c, projectIds }: { c: CaseData; projectIds: string[] }) {
-  const addWord = c.kind === "観光" ? "このギフトがなければ来なかった" : "このクーポンがなければ利用しなかった";
-  const cards = projectIds
-    .map((id) => {
-      const p = c.projects.find((x) => x.id === id)!;
-      const a = c.agg[id];
-      if (!a) return null;
-      const sat = (a.sat as number[] | undefined) ?? [];
-      const add = (a.add as number[] | undefined) ?? [];
-      const n = sum(sat);
-      if (n < MIN_CELL) return null;
-      return { p, n, top2: pct((sat[3] ?? 0) + (sat[4] ?? 0), n), notWithout: pct(add[add.length - 1] ?? 0, sum(add)) };
-    })
-    .filter((x): x is NonNullable<typeof x> => !!x);
-  if (!cards.length) return null;
+/** 自治体が「社内共有ページに出す」を選んだ項目だけを事業ごとに出す */
+function SharedNumbers({ c, projectIds }: { c: CaseData; projectIds: string[] }) {
+  const raw = useApp((s) => s.raw[s.caseId]);
+  const shared = useApp((s) => s.sharedItems);
+  const cards = projectIds.map((id) => ({ p: c.projects.find((x) => x.id === id)!, v: itemValues(c, raw, id) }));
+  const shown = ITEMS.filter((it) => shared[it.key]);
+  if (!shown.length) return null;
   return (
     <section className="mt-10">
-      <h2 className="text-lg font-bold">使った人のアンケートから</h2>
-      <p className="mt-1 text-xs text-muted-foreground">使った直後の1分アンケートの集計。事業全体の数字で、回答が10件未満の事業は出さない</p>
-      <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-        {cards.map(({ p, n, top2, notWithout }) => (
+      <h2 className="text-lg font-bold">届いた先の数字</h2>
+      <p className="mt-1 text-xs text-muted-foreground">{c.muni}が選んだ項目。事業全体の数字で、e街の利用の記録と使った直後のアンケートから</p>
+      <ul className="mt-4 grid gap-3 md:grid-cols-2">
+        {cards.map(({ p, v }) => (
           <li key={p.id} className="rounded-xl border bg-card p-5">
             <p className="text-[13px] font-bold">{p.name}</p>
-            <dl className="mt-3 grid grid-cols-2 gap-4">
-              <div>
-                <dt className="text-xs text-muted-foreground">満足・やや満足</dt>
-                <dd className="mt-0.5 text-2xl font-bold tnum">{pctText(top2)}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">{addWord}</dt>
-                <dd className="mt-0.5 text-2xl font-bold tnum">{pctText(notWithout)}</dd>
-              </div>
+            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+              {shown.map((it) => {
+                const text = shareText(it.key, v);
+                if (!text) return null;
+                return (
+                  <div key={it.key} className={it.key === "where" || it.key === "who" ? "col-span-2" : ""}>
+                    <dt className="text-xs text-muted-foreground">{it.label}</dt>
+                    <dd className="mt-0.5 text-[20px] leading-snug font-bold tnum">{text}</dd>
+                  </div>
+                );
+              })}
             </dl>
-            <p className="mt-3 text-xs text-muted-foreground">回答 {fmt(n)}件</p>
+            <p className="mt-3 text-xs text-muted-foreground">アンケート回答 {fmt(v.responses)}件</p>
           </li>
         ))}
       </ul>
     </section>
   );
+}
+
+function shareText(key: ItemKey, v: ReturnType<typeof itemValues>): string | null {
+  const r = (x: { v: number | null } | null | undefined) => (x?.v == null ? null : pctText(x.v));
+  switch (key) {
+    case "useRate":
+      return v.useRate == null ? null : pctText(v.useRate);
+    case "unused":
+      return `${fmt(v.unused)}${v.hh}`;
+    case "users":
+      return `${fmt(v.used)}${v.hh}`;
+    case "compare":
+      return v.compare ? `${fmt(v.compare.before)} → ${fmt(v.compare.now)}${v.hh}` : null;
+    case "where":
+      return v.where.length ? v.where.slice(0, 3).map(([k]) => k).join("・") : null;
+    case "who":
+      return v.who.length ? v.who.map((w) => `${w.value} ${pctText(w.share)}`).join("・") : null;
+    case "sat":
+      return r(v.sat);
+    case "add":
+      return r(v.add);
+    case "first":
+      return r(v.first);
+    case "again":
+      return r(v.again);
+    case "spend":
+      return v.spend ? yen(v.spend.v) : null;
+  }
 }

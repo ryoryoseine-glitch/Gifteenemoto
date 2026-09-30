@@ -15,12 +15,7 @@ const SITE: Record<string, { name: string; value: string; expiry: string; howto:
 };
 
 const STEPS: { key: PhoneStep; label: string }[] = [
-  { key: "portal", label: "市の既存のサイト（入口）" },
-  { key: "login", label: "ログイン" },
-  { key: "register", label: "利用登録（初回だけ）" },
-  { key: "get", label: "クーポンをもらう" },
-  { key: "wallet", label: "手持ちのクーポン" },
-  { key: "use", label: "使う" },
+  { key: "use", label: "使う（お店で消し込み）" },
   { key: "survey", label: "アンケート" },
   { key: "done", label: "お礼" },
 ];
@@ -44,12 +39,12 @@ export function PhoneFlow() {
       <aside className="order-2 lg:order-1 lg:pt-6">
         <h1 className="text-xl font-bold tracking-tight">受け取る人の画面（スマホ）</h1>
         <p className="mt-2 max-w-lg text-[13px] leading-relaxed text-muted-foreground">
-          市のサイト・会員登録・クーポンの受け取りと消し込みは、既存のe街の仕組みのまま。アンケートも giftee の既存の Survey を流用し、e街の消し込みの直後に出すようにつなぐ。
+          クーポンの受け取りまでは既存のe街の仕組みのまま。お店での消し込みの直後に、giftee の既存の Survey を流用したアンケートを出す。
         </p>
         <div className="mt-4 max-w-lg rounded-lg border bg-card p-4 text-[13px]">
           <p className="font-bold">アンケートで集めるもの</p>
           <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted-foreground">
-            <li>満足度と「このクーポンがなければ利用しなかったか」（報告書の数字）</li>
+            <li>満足度・なければ利用しなかったか・初めてか・また利用したいか（報告書の数字）</li>
             <li>市や支援企業へのひとこと（公開に同意したものだけ、企業の社内共有ページに届く）</li>
           </ol>
           <p className="mt-2 text-xs text-muted-foreground">回答は利用の記録（チケット）と会員の登録項目にひもづけて集計。企業には10件未満の区分を出さない集計値と、ぼかした属性だけを渡す。</p>
@@ -58,9 +53,9 @@ export function PhoneFlow() {
         <ol className="mt-6 max-w-sm space-y-1">
           {STEPS.map((s, i) => (
             <li key={s.key}>
-              {(i === 0 || i === 6) && (
+              {(i === 0 || i === 1) && (
                 <p className={cn("px-3 pt-2 pb-1 text-[11px] font-bold", i === 0 ? "text-muted-foreground" : "text-orange")}>
-                  {i === 0 ? "既存の仕組み（市のサイト・e街）" : "giftee Survey を消し込みの後につなぐ"}
+                  {i === 0 ? "既存（e街の消し込み）" : "giftee Survey を消し込みの後につなぐ"}
                 </p>
               )}
               <button
@@ -779,8 +774,8 @@ function QuestionField({ q, value, onChange }: { q: Question; value: unknown; on
             ))}
           </div>
           <div className="mt-1 flex justify-between text-[11px] text-[#888]">
-            <span>不満</span>
-            <span>満足</span>
+            <span>{q.id === "sat" ? "不満" : "そう思わない"}</span>
+            <span>{q.id === "sat" ? "満足" : "そう思う"}</span>
           </div>
         </>
       )}

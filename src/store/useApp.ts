@@ -8,6 +8,7 @@ import { generateRaw } from "@/data/raw/generate";
 import { appendReaction, appendReceive, appendRedeem, appendSurvey } from "@/data/raw/append";
 import { buildCase } from "@/lib/build-case";
 import { demoNowJst } from "@/data/raw/calendar";
+import { DEFAULT_SHARED } from "@/lib/items";
 import type { CaseData, CaseId, Donor, Project, Question, RegField, Voice } from "@/data/types";
 
 export type Compare = "month" | "year";
@@ -35,7 +36,7 @@ const seedRaw = (m: Record<CaseId, CaseData>): Record<CaseId, RawData> => ({ mat
 const initialMaster = seed();
 
 const phoneInit = {
-  phoneStep: "portal" as PhoneStep,
+  phoneStep: "use" as PhoneStep,
   phoneMemberId: null as string | null,
   phoneTicketId: null as string | null,
   phoneRedemptionId: null as string | null,
@@ -52,6 +53,9 @@ type AppState = {
   raw: Record<CaseId, RawData>;
   setRaw: (r: RawData) => void;
   hiddenVoices: Record<string, boolean>;
+  /** 社内共有ページに出す項目（自治体が選ぶ） */
+  sharedItems: Record<string, boolean>;
+  toggleSharedItem: (key: string) => void;
   seedNow: number;
   phoneMemberId: string | null;
   phoneTicketId: string | null;
@@ -124,6 +128,8 @@ export const useApp = create<AppState>((set) => ({
   raw: seedRaw(initialMaster),
   setRaw: (r) => set((s) => ({ raw: { ...s.raw, [s.caseId]: r } })),
   hiddenVoices: {},
+  sharedItems: { ...DEFAULT_SHARED },
+  toggleSharedItem: (key) => set((s) => ({ sharedItems: { ...s.sharedItems, [key]: !s.sharedItems[key] } })),
   seedNow: Date.now(),
   extra: { matsumoto: {}, sapporo: {} },
   cmp: "month",
@@ -194,9 +200,20 @@ export const useApp = create<AppState>((set) => ({
       const d = c.donors.find((x) => x.id === giftId);
       const raw = s.raw[s.caseId];
       const shopId = d ? firstShopOf(raw, d.projectId) : undefined;
-      if (!d || !s.phoneTicketId || !shopId) return {};
-      const red = appendRedeem(raw, { at: demoNowJst(s.seedNow), ticketId: s.phoneTicketId, shopId, unitValue: c.projects.find((p) => p.id === d.projectId)?.unitValue });
-      return { raw: { ...s.raw, [s.caseId]: red.raw }, phoneRedemptionId: red.redemption.redemptionId, useCount: s.useCount + 1, phoneStep: "survey", answers: {} };
+      if (!d || !shopId) return {};
+      // 受け取りまでは既存のe街。デモでは手持ちのクーポンがある状態から始めるので、ここで受け取りの行を足す
+      let r = raw;
+      let ticketId = s.phoneTicketId;
+      let memberId = s.phoneMemberId;
+      if (!ticketId) {
+        const answers = c.id === "matsumoto" ? answersFromAttrs(c, "1歳・中央地区・30代・母") : answersFromAttrs(c, "40代・関東");
+        const rec = appendReceive(r, { at: demoNowJst(s.seedNow), projectId: d.projectId, couponTypeId: d.id, answers });
+        r = rec.raw;
+        ticketId = rec.ticket.ticketId;
+        memberId = rec.member.memberId;
+      }
+      const red = appendRedeem(r, { at: demoNowJst(s.seedNow), ticketId, shopId, unitValue: c.projects.find((p) => p.id === d.projectId)?.unitValue });
+      return { raw: { ...s.raw, [s.caseId]: red.raw }, phoneTicketId: ticketId, phoneMemberId: memberId, phoneReceived: true, phoneRedemptionId: red.redemption.redemptionId, useCount: s.useCount + 1, phoneStep: "survey", answers: {} };
     }),
   submitSurvey: (_giftId, _projectId, text, publish) =>
     set((s) => {
@@ -278,7 +295,7 @@ export const useApp = create<AppState>((set) => ({
   removeRegField: (i) => set((s) => editCase(s, (c) => ({ ...c, reg: c.reg.filter((_, j) => j !== i) }))),
   reset: () => {
     const m = seed();
-    set({ cases: m, raw: seedRaw(m), hiddenVoices: {}, seedNow: Date.now(), extra: { matsumoto: {}, sapporo: {} }, liked: {}, flashVoiceId: null, corpGift: {}, muniGift: {}, muniProject: {}, ...phoneInit, useCount: 0 });
+    set({ cases: m, raw: seedRaw(m), hiddenVoices: {}, sharedItems: { ...DEFAULT_SHARED }, seedNow: Date.now(), extra: { matsumoto: {}, sapporo: {} }, liked: {}, flashVoiceId: null, corpGift: {}, muniGift: {}, muniProject: {}, ...phoneInit, useCount: 0 });
   },
 }));
 

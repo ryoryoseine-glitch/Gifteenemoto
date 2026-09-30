@@ -2,16 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Database, FileText, MessageSquareText, Settings } from "lucide-react";
+import { BarChart3, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCase } from "@/store/useApp";
 
 const ITEMS = [
-  { href: "/muni/analysis", label: "数字の分析", icon: BarChart3 },
-  { href: "/muni/survey", label: "アンケートの結果", icon: MessageSquareText },
-  { href: "/muni/report", label: "報告書の作成", icon: FileText },
-  { href: "/muni/data", label: "元データ", icon: Database },
-  { href: "/muni/settings", label: "設定", icon: Settings },
+  { href: "/muni/numbers", label: "数字と声", icon: BarChart3 },
+  { href: "/muni/report", label: "報告書（Word）", icon: FileText },
 ];
 
 export function MuniNav() {
