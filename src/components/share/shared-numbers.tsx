@@ -9,9 +9,10 @@ import { useApp } from "@/store/useApp";
 export function SharedNumbers({ c, projectIds }: { c: CaseData; projectIds: string[] }) {
   const raw = useApp((s) => s.raw[s.caseId]);
   const shared = useApp((s) => s.sharedItems);
+  const compareMode = useApp((s) => s.compareMode);
   const shown = ITEMS.filter((it) => shared[it.key]);
   if (!shown.length || !projectIds.length) return null;
-  const cards = projectIds.map((id) => ({ p: c.projects.find((x) => x.id === id)!, v: itemValues(c, raw, id) }));
+  const cards = projectIds.map((id) => ({ p: c.projects.find((x) => x.id === id)!, v: itemValues(c, raw, id, compareMode) }));
   return (
     <section className="mt-10">
       <h2 className="text-lg font-bold">届いた先の数字</h2>
@@ -50,7 +51,7 @@ function shareText(key: ItemKey, v: ReturnType<typeof itemValues>): string | nul
     case "users":
       return `${fmt(v.used)}${v.hh}`;
     case "compare":
-      return v.compare ? `${fmt(v.compare.before)} → ${fmt(v.compare.now)}${v.hh}` : null;
+      return v.compare && v.compare.before != null ? `${fmt(v.compare.before)} → ${fmt(v.compare.now)}枚（${v.compare.beforeLabel}と比べて）` : null;
     case "where":
       return v.where.length ? v.where.slice(0, 3).map(([k]) => k).join("・") : null;
     case "who":

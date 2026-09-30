@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { EyeOff, Eye, MessageSquareQuote } from "lucide-react";
+import { MessageSquareQuote } from "lucide-react";
 import { PersonAvatar } from "@/components/insight/voice-bubble";
 import { cn } from "@/lib/utils";
 import { ago, publicAttrs } from "@/lib/format";
@@ -31,6 +31,7 @@ export function VoicesGrid({
   pageSize?: number;
 }) {
   const toggleHidden = useApp((s) => s.toggleVoiceHidden);
+  const raw = useApp((s) => s.raw[s.caseId]);
   const flashId = useApp((s) => s.flashVoiceId);
   const [theme, setTheme] = useState<string | null>(null);
   const [more, setMore] = useState(false);
@@ -48,6 +49,14 @@ export function VoicesGrid({
   const list = more ? filtered : filtered.slice(0, pageSize);
   const giftName = (id: string) => c.donors.find((x) => x.id === id)?.giftName ?? "";
   const hiddenCount = voices.filter((v) => v.hidden).length;
+  // 自治体の画面では、声を元データ（アンケート回答 → 利用の明細 → チケット・加盟店）とつなげて全部出す
+  const detail = (id: string) => {
+    if (mode !== "muni") return null;
+    const r = raw.surveyResponses.find((x) => x.responseId === id);
+    const red = r ? raw.redemptions.find((x) => x.redemptionId === r.redemptionId) : undefined;
+    const shop = red ? raw.shops.find((x) => x.shopId === red.shopId) : undefined;
+    return { memberId: r?.memberId ?? "—", ticketId: red?.ticketId ?? "—", shop: shop ? `${shop.name}（${shop.area}）` : "—", usedAt: red ? red.usedAt.slice(0, 16).replace("T", " ") : "—", answeredAt: r ? r.answeredAt.slice(0, 16).replace("T", " ") : "—" };
+  };
 
   return (
     <section>
@@ -61,7 +70,7 @@ export function VoicesGrid({
         {closed ? <UpdateBadge kind="daily" text="期間終了" /> : <UpdateBadge kind="live" />}
       </div>
       {mode === "muni" && (
-        <p className="-mt-1 mb-3 text-xs text-muted-foreground">公開に同意した声は、寄附企業の画面にすぐ表示されます。不適切なものは「企業に出さない」で非表示にできます。</p>
+        <p className="-mt-1 mb-3 text-xs text-muted-foreground">公開に同意した声は、寄附企業の画面にすぐ表示されます。不適切なものは「企業に出さない」にチェックすると非表示になります。</p>
       )}
 
       {voices.length === 0 ? (
@@ -117,12 +126,32 @@ export function VoicesGrid({
                     <span className="rounded bg-muted px-1.5 py-px whitespace-nowrap">{v.theme}</span>
                     {showGift && <span className="whitespace-nowrap">{giftName(v.giftId)}</span>}
                   </p>
+                  {(() => {
+                    const d = detail(v.id);
+                    if (!d) return null;
+                    return (
+                      <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 rounded-md bg-muted/60 px-3 py-2 text-[11.5px] text-muted-foreground sm:grid-cols-[auto_1fr_auto_1fr]">
+                        <dt>会員ID</dt>
+                        <dd className="text-foreground tnum">{d.memberId}</dd>
+                        <dt>チケットID</dt>
+                        <dd className="text-foreground tnum">{d.ticketId}</dd>
+                        <dt>使ったクーポン</dt>
+                        <dd className="text-foreground">{giftName(v.giftId) || "—"}</dd>
+                        <dt>使った店舗</dt>
+                        <dd className="text-foreground">{d.shop}</dd>
+                        <dt>使った日時</dt>
+                        <dd className="text-foreground tnum">{d.usedAt}</dd>
+                        <dt>回答した日時</dt>
+                        <dd className="text-foreground tnum">{d.answeredAt}</dd>
+                      </dl>
+                    );
+                  })()}
                 </div>
                 {mode === "muni" && (
-                  <Button variant="ghost" size="xs" className="col-span-2 justify-self-end md:col-span-1" onClick={() => toggleHidden(v.id)}>
-                    {v.hidden ? <Eye /> : <EyeOff />}
-                    {v.hidden ? "企業に出す" : "企業に出さない"}
-                  </Button>
+                  <label className="col-span-2 inline-flex cursor-pointer items-center gap-1.5 justify-self-end text-xs text-muted-foreground md:col-span-1">
+                    <input id={`hide-${v.id}`} type="checkbox" checked={!!v.hidden} onChange={() => toggleHidden(v.id)} className="size-4 accent-[var(--brand)]" />
+                    企業に出さない
+                  </label>
                 )}
               </li>
             ))}

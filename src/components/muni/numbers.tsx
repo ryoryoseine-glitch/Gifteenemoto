@@ -5,7 +5,7 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fmt, pctText, yen } from "@/lib/format";
 import { analyze, attrOptions } from "@/lib/analysis";
-import { ITEMS, itemValues, type ItemKey } from "@/lib/items";
+import { COMPARE_OPTIONS, ITEMS, itemValues, type CompareMode, type ItemKey } from "@/lib/items";
 import { MIN_CELL } from "@/lib/metrics";
 import { useApp, useCase } from "@/store/useApp";
 import { PageHeader, Section } from "@/components/shell/parts";
@@ -24,7 +24,9 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
   const toggle = useApp((s) => s.toggleSharedItem);
   const [pid, setPid] = useState(projects.find((p) => p.status === "active")?.id ?? projects[0].id);
   const projectId = projects.some((p) => p.id === pid) ? pid : projects[0].id;
-  const v = itemValues(c, raw, projectId);
+  const compareMode = useApp((s) => s.compareMode);
+  const setCompareMode = useApp((s) => s.setCompareMode);
+  const v = itemValues(c, raw, projectId, compareMode);
   const attrs = attrOptions(c);
   const [attr, setAttr] = useState(attrs[0]?.key ?? "");
   const attrKey = attrs.some((a) => a.key === attr) ? attr : attrs[0].key;
@@ -41,7 +43,12 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
     users: { main: `${fmt(v.used)}${hh}`, foot: "一度でも消し込みがあった" },
     where: null,
     who: null,
-    compare: v.compare ? { main: `${fmt(v.compare.now)}${hh}`, foot: `新しく利用した${hh}。${v.compare.prevLabel} ${fmt(v.compare.before)}${hh}` } : null,
+    compare: v.compare
+      ? {
+          main: v.compare.before ? `${v.compare.now >= v.compare.before ? "+" : ""}${Math.round(((v.compare.now - v.compare.before) / v.compare.before) * 100)}%` : "—",
+          foot: `${v.compare.nowLabel} ${fmt(v.compare.now)}枚・${v.compare.beforeLabel} ${v.compare.before == null ? "データなし" : `${fmt(v.compare.before)}枚`}`,
+        }
+      : null,
     sat: v.sat.v == null ? null : { main: pctText(v.sat.v), foot: `5段階の上位2つ（回答 ${fmt(v.sat.n)}）` },
     add: v.add?.v == null ? null : { main: pctText(v.add.v), foot: `回答 ${fmt(v.add.n)}` },
     first: v.first?.v == null ? null : { main: pctText(v.first.v), foot: `回答 ${fmt(v.first.n)}` },
@@ -102,7 +109,24 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
                   <tr className="border-b last:border-b-0">
                     <td className="px-5 py-2.5 font-medium">{it.label}</td>
                     <td className="px-3 py-2.5 text-right text-[18px] font-bold whitespace-nowrap tnum">{x.main}</td>
-                    <td className="px-3 py-2.5 text-xs text-muted-foreground">{x.foot}</td>
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground">
+                      {it.key === "compare" && (
+                        <select
+                          id="compare-mode"
+                          value={compareMode}
+                          onChange={(e) => setCompareMode(e.target.value as CompareMode)}
+                          aria-label="比較の相手"
+                          className="mr-2 h-7 rounded-md border bg-card px-1.5 text-xs text-foreground"
+                        >
+                          {COMPARE_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}と比べる
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      {x.foot}
+                    </td>
                     {!corp && (
                       <td className="px-5 py-2.5">
                         <ShareToggle on={!!shared[it.key]} onClick={() => toggle(it.key)} compact label="公開" />
@@ -140,7 +164,7 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
         </Section>
       </div>
 
-      <Section title={<span className="flex items-center gap-2">声 <SourceTag from="アンケート" /></span>} meta={<span className="text-xs text-muted-foreground">{corp ? "公開に同意した声だけ。属性はぼかして表示" : "公開に同意した声は社内共有ページに公開。不適切なものは「企業に出さない」"}</span>}>
+      <Section title={<span className="flex items-center gap-2">声 <SourceTag from="アンケート" /></span>} meta={<span className="text-xs text-muted-foreground">{corp ? "公開に同意した声だけ。属性はぼかして表示" : "公開に同意した声は社内共有ページに公開。不適切なものは「企業に出さない」にチェック"}</span>}>
         <VoicesGrid c={c} projectIds={[projectId]} showGift mode={corp ? "corp" : "muni"} pageSize={6} />
       </Section>
     </div>

@@ -8,7 +8,7 @@ import { generateRaw } from "@/data/raw/generate";
 import { appendReaction, appendReceive, appendRedeem, appendSurvey } from "@/data/raw/append";
 import { buildCase } from "@/lib/build-case";
 import { demoNowJst } from "@/data/raw/calendar";
-import { DEFAULT_SHARED } from "@/lib/items";
+import { DEFAULT_SHARED, type CompareMode } from "@/lib/items";
 import type { CaseData, CaseId, Donor, Project, Question, RegField, Voice } from "@/data/types";
 
 export type Compare = "month" | "year";
@@ -56,6 +56,9 @@ type AppState = {
   /** 社内共有ページに公開する項目（自治体が選ぶ） */
   sharedItems: Record<string, boolean>;
   toggleSharedItem: (key: string) => void;
+  /** 比較の相手（既定は前年度の同じ期間） */
+  compareMode: CompareMode;
+  setCompareMode: (m: CompareMode) => void;
   seedNow: number;
   phoneMemberId: string | null;
   phoneTicketId: string | null;
@@ -130,6 +133,8 @@ export const useApp = create<AppState>((set) => ({
   hiddenVoices: {},
   sharedItems: { ...DEFAULT_SHARED },
   toggleSharedItem: (key) => set((s) => ({ sharedItems: { ...s.sharedItems, [key]: !s.sharedItems[key] } })),
+  compareMode: "lastYear",
+  setCompareMode: (compareMode) => set({ compareMode }),
   seedNow: Date.now(),
   extra: { matsumoto: {}, sapporo: {} },
   cmp: "month",
