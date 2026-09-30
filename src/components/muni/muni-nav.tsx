@@ -18,11 +18,18 @@ export function MuniNav() {
     <nav aria-label="自治体メニュー" className="rounded-lg border bg-card p-2 lg:sticky lg:top-24">
       <div className="hidden px-3 pt-1 pb-2 text-xs text-muted-foreground lg:block">{c.muni}</div>
       <div className="flex gap-1 overflow-x-auto lg:flex-col">
-        <div className="flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] whitespace-nowrap text-muted-foreground/70" title="e街・giftee Survey の既存の管理画面">
+        <Link
+          href="/muni/existing"
+          aria-current={path === "/muni/existing" ? "page" : undefined}
+          className={cn(
+            "flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] whitespace-nowrap text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+            path === "/muni/existing" && "bg-muted font-bold text-foreground",
+          )}
+        >
           <LayoutDashboard className="size-4 shrink-0" />
           ダッシュボード
           <span className="ml-auto rounded bg-muted px-1.5 py-px text-[10px] font-bold">既存</span>
-        </div>
+        </Link>
         <p className="hidden px-3 pt-2 pb-1 text-[11px] font-bold text-orange lg:block">ダッシュボードに追加する予定</p>
         {ITEMS.map((it) => {
           const on = path === it.href;
