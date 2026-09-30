@@ -12,7 +12,7 @@ import { PageHeader, Section } from "@/components/shell/parts";
 import { VoicesGrid } from "@/components/insight/voices-grid";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-/** 自治体：決めた項目の数字と声（giftee Survey のダッシュボードを流用する想定）。項目ごとに社内共有ページに公開するかを選ぶ */
+/** 自治体：決めた項目の数字と声（giftee Survey のダッシュボードを流用する想定）。企業のダッシュボード（mode="corp"）では、項目ごとに社内共有ページに公開するかを選ぶ */
 export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
   const c = useCase();
   const corp = mode === "corp";
@@ -64,8 +64,8 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
         title={corp ? "寄附した事業の数字と声" : "数字と声"}
         sub={
           corp
-            ? `${c.muni}の事業全体の数字。e街の発行〜消し込みの記録と、使った直後のアンケートの結果`
-            : "e街の発行〜消し込みの記録と、使った直後のアンケートの結果。チェックした項目を寄附企業の社内共有ページに公開"
+            ? `${c.muni}の事業全体の数字。チェックした項目を社内共有ページに公開`
+            : "e街の発行〜消し込みの記録と、使った直後のアンケートの結果。寄附企業のダッシュボードにも同じ数字が出る"
         }
         actions={
           <Select items={items} value={projectId} onValueChange={(x) => x && setPid(x as string)}>
@@ -90,7 +90,7 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
               <th className="px-5 py-2 font-normal">項目</th>
               <th className="px-3 py-2 text-right font-normal">数字</th>
               <th className="px-3 py-2 font-normal">内訳</th>
-              {!corp && <th className="px-5 py-2 font-normal">社内共有ページに公開</th>}
+              {corp && <th className="px-5 py-2 font-normal">社内共有ページに公開</th>}
             </tr>
           </thead>
           <tbody>
@@ -101,7 +101,7 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
                 <Fragment key={it.key}>
                   {head && (
                     <tr className="border-b bg-muted/50">
-                      <td colSpan={corp ? 3 : 4} className="px-5 py-1.5 text-xs font-bold text-muted-foreground">
+                      <td colSpan={corp ? 4 : 3} className="px-5 py-1.5 text-xs font-bold text-muted-foreground">
                         {it.from === "アンケート" ? "使った直後のアンケートから" : "e街の発行〜消し込みの記録から"}
                       </td>
                     </tr>
@@ -127,7 +127,7 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
                       )}
                       {x.foot}
                     </td>
-                    {!corp && (
+                    {corp && (
                       <td className="px-5 py-2.5">
                         <ShareToggle on={!!shared[it.key]} onClick={() => toggle(it.key)} compact label="公開" />
                       </td>
@@ -141,7 +141,7 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
       </div>
 
       <div className="grid gap-5">
-        <Section title={<span className="flex items-center gap-2">誰に届いたか <SourceTag from="e街の記録" /></span>} meta={corp ? undefined : <ShareToggle on={!!shared.who} onClick={() => toggle("who")} compact />} bodyClassName="p-0">
+        <Section title={<span className="flex items-center gap-2">誰に届いたか <SourceTag from="e街の記録" /></span>} meta={corp ? <ShareToggle on={!!shared.who} onClick={() => toggle("who")} compact /> : undefined} bodyClassName="p-0">
           <div className="flex flex-wrap gap-1.5 border-b px-5 py-2.5">
             {attrs.map((a) => (
               <button
@@ -158,13 +158,13 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
           <Bars rows={who.map((r) => [r.value, r.receivedHH])} max={whoMax} unit={hh} />
           <p className="border-t px-5 py-2 text-xs text-muted-foreground">受け取った{hh}を会員情報の登録項目で分けたもの{corp && "。10件未満の区分は出さない"}</p>
         </Section>
-        <Section title={<span className="flex items-center gap-2">どこで使われたか <SourceTag from="e街の記録" /></span>} meta={corp ? undefined : <ShareToggle on={!!shared.where} onClick={() => toggle("where")} compact />} bodyClassName="p-0">
+        <Section title={<span className="flex items-center gap-2">どこで使われたか <SourceTag from="e街の記録" /></span>} meta={corp ? <ShareToggle on={!!shared.where} onClick={() => toggle("where")} compact /> : undefined} bodyClassName="p-0">
           <Bars rows={v.where.slice(0, 8)} max={whereMax} unit="枚" />
           <p className="border-t px-5 py-2 text-xs text-muted-foreground">消し込みのあった加盟店の種類ごと</p>
         </Section>
       </div>
 
-      <Section title={<span className="flex items-center gap-2">声 <SourceTag from="アンケート" /></span>} meta={<span className="text-xs text-muted-foreground">{corp ? "公開に同意した声だけ。属性はぼかして表示" : "公開に同意した声は社内共有ページに公開。不適切なものは「企業に出さない」にチェック"}</span>}>
+      <Section title={<span className="flex items-center gap-2">声 <SourceTag from="アンケート" /></span>} meta={<span className="text-xs text-muted-foreground">{corp ? "公開に同意した声だけ。属性はぼかして表示。社内共有ページにも出る" : "不適切なものは「企業に出さない」にチェック。企業のダッシュボードと社内共有ページから消える"}</span>}>
         <VoicesGrid c={c} projectIds={[projectId]} showGift mode={corp ? "corp" : "muni"} pageSize={6} />
       </Section>
     </div>

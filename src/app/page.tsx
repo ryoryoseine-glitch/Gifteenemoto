@@ -62,7 +62,7 @@ export default function Home() {
                 <Link href="/muni/numbers" className="font-bold text-link hover:underline">
                   数字と声
                 </Link>
-                （Survey のダッシュボードを流用。社内共有ページに公開する項目を選ぶ）、
+                （Survey のダッシュボードを流用）、
                 <Link href="/muni/report" className="font-bold text-link hover:underline">
                   報告書の Word 出力
                 </Link>
@@ -75,11 +75,11 @@ export default function Home() {
                 <Link href="/corp" className="font-bold text-link hover:underline">
                   ダッシュボード
                 </Link>
-                （自治体と同じ数字と声）、
+                （自治体と同じ数字と声。社内共有ページに公開する項目を選ぶ）、
                 <Link href="/share" className="font-bold text-link hover:underline">
                   社内共有ページ
                 </Link>
-                （1枚。声と、自治体が選んだ数字）。報告書は自治体から Word で届く
+                （1枚。声と、企業が選んだ数字）。報告書は自治体から Word で届く
               </td>
             </tr>
           </tbody>
