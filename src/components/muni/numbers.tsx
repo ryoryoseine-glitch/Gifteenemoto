@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fmt, pctText, yen } from "@/lib/format";
@@ -66,22 +66,43 @@ export function Numbers() {
         }
       />
 
-      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {tiles.map((it) => {
-          const x = value[it.key]!;
-          return (
-            <li key={it.key} className="flex flex-col rounded-lg border bg-card p-4">
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-[13px] font-medium">{it.label}</p>
-                <SourceTag from={it.from} />
-              </div>
-              <p className="mt-1 text-[26px] leading-tight font-bold tnum">{x.main}</p>
-              <p className="mt-0.5 flex-1 text-xs text-muted-foreground">{x.foot}</p>
-              <ShareToggle on={!!shared[it.key]} onClick={() => toggle(it.key)} />
-            </li>
-          );
-        })}
-      </ul>
+      <div className="overflow-x-auto rounded-lg border bg-card">
+        <table className="w-full min-w-[720px] text-[13px]">
+          <thead>
+            <tr className="border-b text-left text-xs text-muted-foreground">
+              <th className="px-5 py-2 font-normal">項目</th>
+              <th className="px-3 py-2 text-right font-normal">数字</th>
+              <th className="px-3 py-2 font-normal">内訳</th>
+              <th className="px-5 py-2 font-normal">社内共有ページに出す</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tiles.map((it, i) => {
+              const x = value[it.key]!;
+              const head = i === 0 || tiles[i - 1].from !== it.from;
+              return (
+                <Fragment key={it.key}>
+                  {head && (
+                    <tr className="border-b bg-muted/50">
+                      <td colSpan={4} className="px-5 py-1.5 text-xs font-bold text-muted-foreground">
+                        {it.from === "アンケート" ? "使った直後のアンケートから" : "e街の発行〜消し込みの記録から"}
+                      </td>
+                    </tr>
+                  )}
+                  <tr className="border-b last:border-b-0">
+                    <td className="px-5 py-2.5 font-medium">{it.label}</td>
+                    <td className="px-3 py-2.5 text-right text-[18px] font-bold whitespace-nowrap tnum">{x.main}</td>
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground">{x.foot}</td>
+                    <td className="px-5 py-2.5">
+                      <ShareToggle on={!!shared[it.key]} onClick={() => toggle(it.key)} compact label="出す" />
+                    </td>
+                  </tr>
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Section title={<span className="flex items-center gap-2">誰に届いたか <SourceTag from="e街の記録" /></span>} meta={<ShareToggle on={!!shared.who} onClick={() => toggle("who")} compact />} bodyClassName="p-0">
@@ -120,7 +141,7 @@ function SourceTag({ from }: { from: string }) {
   );
 }
 
-function ShareToggle({ on, onClick, compact }: { on: boolean; onClick: () => void; compact?: boolean }) {
+function ShareToggle({ on, onClick, compact, label = "社内共有ページに出す" }: { on: boolean; onClick: () => void; compact?: boolean; label?: string }) {
   return (
     <button
       type="button"
