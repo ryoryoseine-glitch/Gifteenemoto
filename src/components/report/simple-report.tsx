@@ -7,7 +7,7 @@ import { fmt, pctText, yen } from "@/lib/format";
 import { TODAY, addDays, periodStats, periodVoices, periodsOf, previousRange, rangeLabel, type PeriodStats } from "@/lib/period";
 import { MIN_CELL, sum } from "@/lib/metrics";
 import { analyze, attrOptions } from "@/lib/analysis";
-import { itemValues } from "@/lib/items";
+import { ALL_COUPONS, itemValues, withAllCoupons } from "@/lib/items";
 import { useApp, useCase } from "@/store/useApp";
 import { PageHeader } from "@/components/shell/parts";
 import { Button } from "@/components/ui/button";
@@ -23,22 +23,29 @@ export function SimpleReport() {
   const notes = useApp((s) => s.reportNotes);
   const setNote = useApp((s) => s.setReportNote);
 
-  // 報告書は「企業 × 事業」ごと
-  const keyOf = (d: { name: string; projectId: string }) => `${d.name}|${d.projectId}`;
-  const keys = [...new Set(c.donors.map(keyOf))];
-  const [key, setKey] = useState(keys[0]);
-
-  const cur = keys.includes(key) ? key : keys[0];
-  const [name, projectId] = cur.split("|");
-  const p = c.projects.find((x) => x.id === projectId)!;
-  const ds = c.donors.filter((d) => keyOf(d) === cur);
+  // 報告書は「寄附企業 × 事業」ごと。事業全体（その事業のクーポン全部）とクーポンごとの両方を載せる
+  const names = [...new Set(c.donors.map((d) => d.name))];
+  const [key, setKey] = useState(names[0]);
+  const cur = names.includes(key) ? key : names[0];
+  const name = cur;
+  const ds = c.donors.filter((d) => d.name === cur);
+  const coupons = c.projects;
+  const scoped = withAllCoupons(c, raw, coupons.map((x) => x.id));
+  const sc = scoped.c;
+  const sraw = scoped.raw;
+  const projectId = ALL_COUPONS;
+  const p = sc.projects.find((x) => x.id === projectId)!;
+  const businessName = `${c.muniShort} ${c.kind}支援事業`;
   const amount = sum(ds.map((d) => d.amount));
   const share = p.budget ? amount / p.budget : 0;
 
   // 期間は自由に選べる（開始日〜終了日。終了日を含む）。既定は直近の3か月の区切り
   const start = periodsOf(p, 1)[0]?.from ?? TODAY;
-  const quarters = periodsOf(p, 3);
-  const lastQ = quarters[quarters.length - 1];
+  // 既定は今日を含む年度の四半期（4〜6月・7〜9月・10〜12月・1〜3月）
+  const tm = Number(TODAY.slice(5, 7));
+  const qStart = ((Math.floor(((tm + 8) % 12) / 3) * 3 + 3) % 12) + 1;
+  const qFrom = `${TODAY.slice(0, 4)}-${String(qStart).padStart(2, "0")}-01`;
+  const lastQ = { from: qFrom < start ? start : qFrom, to: addDays(TODAY, 1) };
   const endOfProject = addDays(periodsOf(p, 1).slice(-1)[0]?.to ?? addDays(TODAY, 1), -1);
   const cap = (d: string) => (d > TODAY ? TODAY : d);
   const [range, setRange] = useState<{ from: string; last: string } | null>(null);
@@ -52,9 +59,13 @@ export function SimpleReport() {
     { label: "事業開始から", from: start, last: cap(endOfProject) },
   ];
 
-  const now = periodStats(c, raw, projectId, per);
-  const before = prev ? periodStats(c, raw, projectId, prev) : null;
-  const voices = periodVoices(c, raw, projectId, per, hidden).slice(0, 3);
+  const now = periodStats(sc, sraw, projectId, per);
+  const before = prev ? periodStats(sc, sraw, projectId, prev) : null;
+  const voices = periodVoices(sc, sraw, projectId, per, hidden).slice(0, 3);
+  // クーポンごと（この期間に動きのあったもの）
+  const byCoupon = coupons
+    .map((x) => ({ x, st: periodStats(c, raw, x.id, per), mine: ds.some((d) => d.projectId === x.id) }))
+    .filter(({ x, st }) => x.status === "active" || st.uses > 0);
 
   const hhWord = c.kind === "観光" ? "人" : "世帯";
   const addWord = c.kind === "観光" ? "なければ来なかった" : "なければ利用しなかった";
@@ -69,8 +80,8 @@ export function SimpleReport() {
     { group: "アンケート", label: "また利用したい", unit: "%", get: (s) => s.again, rate: true },
   ];
   const whoAttr = attrOptions(c)[0];
-  const who = analyze(c, raw, projectId, whoAttr?.key ?? "").rows.filter((r) => r.value !== "ひもづけなし" && r.receivedHH >= MIN_CELL);
-  const where = itemValues(c, raw, projectId).where.slice(0, 5);
+  const who = analyze(sc, sraw, projectId, whoAttr?.key ?? "").rows.filter((r) => r.value !== "ひもづけなし" && r.receivedHH >= MIN_CELL);
+  const where = itemValues(sc, sraw, projectId).where.slice(0, 5);
 
   const diffText = (r: Row) => {
     const a = r.get(now);
@@ -99,10 +110,7 @@ export function SimpleReport() {
   }
 
   const noteId = `${cur}|${per.key}`;
-  const items = keys.map((k) => {
-    const [n, pid] = k.split("|");
-    return { value: k, label: `${n.replace("株式会社", "")}｜${c.projects.find((x) => x.id === pid)?.name ?? ""}` };
-  });
+  const items = names.map((n) => ({ value: n, label: `${n.replace("株式会社", "")}｜${c.kind}支援事業` }));
 
   return (
     <div>
@@ -111,7 +119,7 @@ export function SimpleReport() {
         title="報告書の作成"
         sub="寄附企業ごとに、期間を選んで原案を作成。前の期間との差分は自動で入り、Word で書き出して記入・送付"
         actions={
-          <Button onClick={() => downloadWord(`${c.muniShort}_${p.name}_${name.replace("株式会社", "")}_${per.label}_報告書`)}>
+          <Button onClick={() => downloadWord(`${c.muniShort}_${c.kind}支援事業_${name.replace("株式会社", "")}_${per.label}_報告書`)}>
             <Download />
             Wordで書き出す
           </Button>
@@ -120,9 +128,9 @@ export function SimpleReport() {
 
       <div className="mb-5 flex flex-wrap items-end gap-3 rounded-lg border bg-card px-4 py-3">
         <label className="grid gap-1 text-xs text-muted-foreground">
-          寄附企業とクーポン
+          寄附企業と事業
           <Select items={items} value={cur} onValueChange={(v) => v && setKey(v as string)}>
-            <SelectTrigger className="min-w-[280px]" aria-label="寄附企業とクーポン">
+            <SelectTrigger className="min-w-[280px]" aria-label="寄附企業と事業">
               <SelectValue />
             </SelectTrigger>
             <SelectContent alignItemWithTrigger={false}>
@@ -182,7 +190,7 @@ export function SimpleReport() {
       <article data-report-doc className="mx-auto max-w-[820px] rounded-lg border bg-white px-8 py-8 text-[#232323] shadow-sm sm:px-12">
         <p className="text-[13px]">{name} 様</p>
         <h2 className="mt-3 text-[20px] leading-snug font-bold">
-          {p.name} ご報告（{per.label}
+          {businessName} ご報告（{per.label}
           {per.partial ? "・途中経過" : ""}）
         </h2>
         <p className="mt-1 text-[12px] text-[#666]">{c.muni}</p>
@@ -196,14 +204,14 @@ export function SimpleReport() {
             <Tr k="事業費">
               {yen(p.budget)}（ご寄附の割合 {pctText(share * 100)}）
             </Tr>
-            <Tr k="ご寄附で届けたもの">{ds.map((d) => d.giftName).join("・")}</Tr>
+            <Tr k="ご寄附で届けたもの">{ds.map((d) => `${d.giftName}（${c.projects.find((x) => x.id === d.projectId)?.name ?? ""}）`).join("・")}</Tr>
             <Tr k="事業の目的・対象">
               <Fill>地域再生計画の事業の目的と対象</Fill>
             </Tr>
           </tbody>
         </table>
 
-        <H3>2. 実績と効果（{per.label}）</H3>
+        <H3>2. 実績と効果（{per.label}・事業全体）</H3>
         <table className="w-full text-[13px] tabular-nums">
           <thead>
             <tr className="text-left text-[12px] text-[#666]">
@@ -283,6 +291,38 @@ export function SimpleReport() {
             </table>
           </div>
         </div>
+
+        <p className="mt-6 mb-1 text-[12px] font-bold text-[#666]">クーポンごと（{per.label}）</p>
+        <table className="w-full text-[13px] tabular-nums">
+          <thead>
+            <tr className="text-left text-[12px] text-[#666]">
+              <th className="py-1.5 font-normal">クーポン</th>
+              <th className="py-1.5 text-right font-normal">新しく利用した{hhWord}</th>
+              <th className="py-1.5 text-right font-normal">利用の数</th>
+              <th className="py-1.5 text-right font-normal">利用率（累計）</th>
+              <th className="py-1.5 text-right font-normal">満足・やや満足</th>
+              <th className="py-1.5 text-right font-normal">{addWord}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {byCoupon.map(({ x, st, mine }) => (
+              <tr key={x.id} className="border-t">
+                <td className="py-1.5">
+                  {x.name}
+                  {mine && <span className="ml-1.5 text-[11px] text-[#c8542a]">貴社のご寄附</span>}
+                </td>
+                <td className="py-1.5 text-right">
+                  {fmt(st.newUsed)}
+                  {hhWord}
+                </td>
+                <td className="py-1.5 text-right">{fmt(st.uses)}枚</td>
+                <td className="py-1.5 text-right">{pctText(st.useRate)}</td>
+                <td className="py-1.5 text-right">{st.satTop2 == null ? "—" : pctText(st.satTop2)}</td>
+                <td className="py-1.5 text-right">{st.notWithout == null ? "—" : pctText(st.notWithout)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
         <H3>3. 前の期間からの主な変化</H3>
         <ul className="list-disc space-y-1 pl-5 text-[13px]">

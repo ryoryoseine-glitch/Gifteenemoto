@@ -238,3 +238,24 @@
   to { transform: scale(1.08); }
 }
 .slow-zoom { animation: slow-zoom 5s ease-out both; }
+
+/* 配布中のクーポンが横に流れる帯（同じ列を2回並べて -50% まで動かす） */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-track {
+  animation: marquee 40s linear infinite;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+}

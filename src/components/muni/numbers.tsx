@@ -5,7 +5,7 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fmt, pctText, yen } from "@/lib/format";
 import { analyze, attrOptions } from "@/lib/analysis";
-import { COMPARE_OPTIONS, ITEMS, itemValues, type CompareMode, type ItemKey } from "@/lib/items";
+import { ALL_COUPONS, COMPARE_OPTIONS, ITEMS, itemValues, withAllCoupons, type CompareMode, type ItemKey } from "@/lib/items";
 import { CASE_OPTIONS } from "@/data";
 import type { CaseId } from "@/data/types";
 import { MIN_CELL } from "@/lib/metrics";
@@ -24,24 +24,27 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
   const raw = useApp((s) => s.raw[s.caseId]);
   const shared = useApp((s) => s.sharedItems);
   const toggle = useApp((s) => s.toggleSharedItem);
-  const [pid, setPid] = useState(projects.find((p) => p.status === "active")?.id ?? projects[0].id);
-  const projectId = projects.some((p) => p.id === pid) ? pid : projects[0].id;
+  const [pid, setPid] = useState<string>(ALL_COUPONS);
+  const projectId = pid === ALL_COUPONS || projects.some((p) => p.id === pid) ? pid : projects[0].id;
   const compareMode = useApp((s) => s.compareMode);
   const setCompareMode = useApp((s) => s.setCompareMode);
   // 1段目は事業（子育て支援・観光支援）、2段目はその下のクーポン
   const cases = useApp((s) => s.cases);
   const setCase = useApp((s) => s.setCase);
   const businessItems = (corp ? CASE_OPTIONS.filter((o) => o.value === c.id) : CASE_OPTIONS).map((o) => ({ value: o.value, label: `${cases[o.value].kind}支援事業（${cases[o.value].muniShort}）` }));
-  const rawF = raw;
-  const v = itemValues(c, rawF, projectId, compareMode);
+  // 「すべてのクーポン」はその事業の中のクーポン全部（企業は自社が寄附したものの全部）
+  const all = pid === ALL_COUPONS;
+  const scoped = all ? withAllCoupons(c, raw, projects.map((p) => p.id)) : { c, raw };
+  const rawF = scoped.raw;
+  const v = itemValues(scoped.c, rawF, projectId, compareMode);
   const attrs = attrOptions(c);
   const [attr, setAttr] = useState(attrs[0]?.key ?? "");
   const attrKey = attrs.some((a) => a.key === attr) ? attr : attrs[0].key;
   // 企業には10件未満の区分を出さない
-  const who = analyze(c, rawF, projectId, attrKey).rows.filter((r) => r.value !== "ひもづけなし" && (!corp || r.receivedHH >= MIN_CELL));
+  const who = analyze(scoped.c, rawF, projectId, attrKey).rows.filter((r) => r.value !== "ひもづけなし" && (!corp || r.receivedHH >= MIN_CELL));
   const whoMax = Math.max(1, ...who.map((r) => r.receivedHH));
   const whereMax = Math.max(1, ...v.where.map(([, n]) => n));
-  const items = projects.map((p) => ({ value: p.id, label: p.status === "closed" ? `${p.name}（終了）` : p.name }));
+  const items = [{ value: ALL_COUPONS, label: "すべてのクーポン" }, ...projects.map((p) => ({ value: p.id, label: p.status === "closed" ? `${p.name}（終了）` : p.name }))];
   const hh = v.hh;
 
   const value: Record<ItemKey, { main: string; foot: string; dist?: { label: string; pct: number }[] } | null> = {
@@ -193,7 +196,7 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
       </div>
 
       <Section title={<span className="flex items-center gap-2">声 <SourceTag from="アンケート" /></span>} meta={<span className="text-xs text-muted-foreground">{corp ? "公開に同意した声だけ。属性はぼかして表示。「社内共有ページに出さない」にチェックした声は社員に見えない" : "不適切なものは「企業に出さない」にチェック。企業のダッシュボードと社内共有ページから消える"}</span>}>
-        <VoicesGrid c={c} projectIds={[projectId]} showGift mode={corp ? "corp" : "muni"} pageSize={6} />
+        <VoicesGrid c={c} projectIds={all ? projects.map((p) => p.id) : [projectId]} showGift mode={corp ? "corp" : "muni"} pageSize={6} />
       </Section>
     </div>
   );

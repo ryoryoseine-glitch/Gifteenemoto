@@ -1,7 +1,8 @@
 import type { CaseData } from "@/data/types";
 import type { RawData } from "@/data/raw/types";
 import { analyze } from "@/lib/analysis";
-import { TODAY, addDays, periodStats, periodsOf, rangeLabel } from "@/lib/period";
+import { TODAY, addDays, periodStats, periodsOf } from "@/lib/period";
+import { projectMonthKeys, projectPeriod } from "@/data/raw/calendar";
 import { MIN_CELL } from "@/lib/metrics";
 
 /**
@@ -43,19 +44,18 @@ function compareOf(c: CaseData, raw: RawData, projectId: string, mode: CompareMo
   const p = c.projects.find((x) => x.id === projectId)!;
   const short = (l: string) => l.replace(/^\d+年/, "");
   if (mode === "lastYear") {
-    const months = periodsOf(p, 1);
+    // 今年度（4月〜今日）と、前年度の同じ月を比べる
+    const ty = Number(TODAY.slice(0, 4));
+    const fy = Number(TODAY.slice(5, 7)) < 4 ? ty - 1 : ty;
+    const months = periodsOf(p, 1).filter((m) => m.from >= `${fy}-04-01` && m.from <= TODAY);
     if (!months.length) return null;
     const cur = { from: months[0].from, to: addDays(TODAY, 1) };
     const labels = months.map((m) => `${Number(m.from.slice(5, 7))}月`);
-    const fy = Number(months[0].from.slice(0, 4)) - (Number(months[0].from.slice(5, 7)) < 4 ? 1 : 0);
     const base = raw.baselines.filter((b) => b.projectId === projectId && b.fiscalYear === fy - 1 && labels.includes(b.month));
-    if (!base.length) return { nowLabel: `今年度 ${short(rangeLabel(cur.from, cur.to))}`, beforeLabel: "前年度", now: periodStats(c, raw, projectId, cur).uses, before: null };
-    return {
-      nowLabel: `今年度 ${labels[0]}〜${labels[labels.length - 1]}`,
-      beforeLabel: "前年度の同じ期間",
-      now: periodStats(c, raw, projectId, cur).uses,
-      before: base.reduce((a, b) => a + b.used, 0),
-    };
+    const now = periodStats(c, raw, projectId, cur).uses;
+    const nowLabel = `今年度 ${labels[0]}〜${labels[labels.length - 1]}`;
+    if (!base.length) return { nowLabel, beforeLabel: "前年度", now, before: null };
+    return { nowLabel, beforeLabel: "前年度の同じ期間", now, before: base.reduce((a, b) => a + b.used, 0) };
   }
   const pers = periodsOf(p, mode === "prevQuarter" ? 3 : 1);
   const cur = pers[pers.length - 1];
@@ -66,6 +66,47 @@ function compareOf(c: CaseData, raw: RawData, projectId: string, mode: CompareMo
     beforeLabel: prev ? short(prev.label) : "前の期間",
     now: periodStats(c, raw, projectId, cur).uses,
     before: prev ? periodStats(c, raw, projectId, prev).uses : null,
+  };
+}
+
+export const ALL_COUPONS = "__all__";
+
+/**
+ * 「すべてのクーポン」＝その事業の中のクーポン全部。クーポンを1つに見立てた仮のクーポン（ID は ALL_COUPONS）を足し、
+ * 元データの事業IDをそのIDに付け替える。前年度実績は月ごとに足し合わせる。
+ */
+export function withAllCoupons(c: CaseData, raw: RawData, projectIds: string[]): { c: CaseData; raw: RawData } {
+  const ps = c.projects.filter((p) => projectIds.includes(p.id));
+  if (!ps.length) return { c, raw };
+  const keys = [...new Set(ps.flatMap((p) => projectMonthKeys(p)))].sort();
+  const ends = ps.map((p) => projectPeriod(p).end).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const [sy, sm] = keys[0].split("-").map(Number);
+  const [ey, em] = ends[ends.length - 1];
+  const all = {
+    ...ps[0],
+    id: ALL_COUPONS,
+    name: "すべてのクーポン",
+    status: ps.some((p) => p.status === "active") ? "active" : ps[0].status,
+    period: `${sy}年${sm}月〜${ey}年${em}月`,
+    months: keys.map((k) => `${Number(k.slice(5))}月`),
+    budget: ps.reduce((a, p) => a + p.budget, 0),
+  } as CaseData["projects"][number];
+  const set = new Set(projectIds);
+  const base = new Map<string, (typeof raw.baselines)[number]>();
+  for (const b of raw.baselines) {
+    if (!set.has(b.projectId)) continue;
+    const k = `${b.fiscalYear}|${b.month}`;
+    const cur = base.get(k);
+    base.set(k, cur ? { ...cur, received: cur.received + b.received, used: cur.used + b.used } : { ...b, projectId: ALL_COUPONS });
+  }
+  return {
+    c: { ...c, projects: [...c.projects, all] },
+    raw: {
+      ...raw,
+      tickets: raw.tickets.map((t) => (set.has(t.projectId) ? { ...t, projectId: ALL_COUPONS } : t)),
+      surveyResponses: raw.surveyResponses.map((r) => (set.has(r.projectId) ? { ...r, projectId: ALL_COUPONS } : r)),
+      baselines: [...raw.baselines, ...base.values()],
+    },
   };
 }
 

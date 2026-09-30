@@ -11,6 +11,7 @@ import { GiftPhoto, PhotoCredits } from "@/components/gift/gift-photo";
 import { VoiceBubble } from "@/components/insight/voice-bubble";
 import { LIVE_VOICES } from "@/data/live-voices";
 import { useSharedStats } from "./shared-numbers";
+import { CouponMarquee } from "./coupon-marquee";
 
 /** 社内共有ページ（ログインなし）。ギフトの写真がめくれていき、その下に感謝の声 */
 export function SharePage() {
@@ -150,6 +151,10 @@ export function SharePage() {
         </section>
       )}
 
+
+      <div className="mt-10">
+        <CouponMarquee c={c} />
+      </div>
 
       <Events c={c} />
 
