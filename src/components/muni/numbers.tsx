@@ -5,7 +5,7 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fmt, pctText, yen } from "@/lib/format";
 import { analyze, attrOptions } from "@/lib/analysis";
-import { COMPARE_OPTIONS, ITEMS, itemValues, type CompareMode, type ItemKey } from "@/lib/items";
+import { COMPARE_OPTIONS, ITEMS, itemValues, rawForCoupon, type CompareMode, type ItemKey } from "@/lib/items";
 import { MIN_CELL } from "@/lib/metrics";
 import { useApp, useCase } from "@/store/useApp";
 import { PageHeader, Section } from "@/components/shell/parts";
@@ -26,18 +26,24 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
   const projectId = projects.some((p) => p.id === pid) ? pid : projects[0].id;
   const compareMode = useApp((s) => s.compareMode);
   const setCompareMode = useApp((s) => s.setCompareMode);
-  const v = itemValues(c, raw, projectId, compareMode);
+  // クーポン（券種）で絞る。企業は自社のクーポンだけ選べる
+  const coupons = c.donors.filter((d) => d.projectId === projectId && (!corp || d.name === c.corp.name));
+  const [coupon, setCoupon] = useState<string>("all");
+  const couponId = coupons.some((d) => d.id === coupon) ? coupon : null;
+  const rawF = rawForCoupon(raw, couponId);
+  const couponItems = [{ value: "all", label: "すべてのクーポン" }, ...coupons.map((d) => ({ value: d.id, label: corp ? d.giftName : `${d.giftName}（${d.name.replace("株式会社", "")}）` }))];
+  const v = itemValues(c, rawF, projectId, compareMode);
   const attrs = attrOptions(c);
   const [attr, setAttr] = useState(attrs[0]?.key ?? "");
   const attrKey = attrs.some((a) => a.key === attr) ? attr : attrs[0].key;
   // 企業には10件未満の区分を出さない
-  const who = analyze(c, raw, projectId, attrKey).rows.filter((r) => r.value !== "ひもづけなし" && (!corp || r.receivedHH >= MIN_CELL));
+  const who = analyze(c, rawF, projectId, attrKey).rows.filter((r) => r.value !== "ひもづけなし" && (!corp || r.receivedHH >= MIN_CELL));
   const whoMax = Math.max(1, ...who.map((r) => r.receivedHH));
   const whereMax = Math.max(1, ...v.where.map(([, n]) => n));
   const items = projects.map((p) => ({ value: p.id, label: p.name }));
   const hh = v.hh;
 
-  const value: Record<ItemKey, { main: string; foot: string } | null> = {
+  const value: Record<ItemKey, { main: string; foot: string; dist?: { label: string; pct: number }[] } | null> = {
     useRate: v.useRate == null ? null : { main: pctText(v.useRate), foot: `使用済み${hh} ${fmt(v.used)} ÷ 配布した${hh} ${fmt(v.received)}` },
     given: { main: `${fmt(v.received)}${hh}`, foot: `クーポンを受け取った${hh}` },
     users: { main: `${fmt(v.used)}${hh}`, foot: "一度でも消し込みがあった" },
@@ -49,10 +55,10 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
           foot: `${v.compare.nowLabel} ${fmt(v.compare.now)}枚・${v.compare.beforeLabel} ${v.compare.before == null ? "データなし" : `${fmt(v.compare.before)}枚`}`,
         }
       : null,
-    sat: v.sat.v == null ? null : { main: pctText(v.sat.v), foot: `5段階の上位2つ（回答 ${fmt(v.sat.n)}）` },
-    add: v.add?.v == null ? null : { main: pctText(v.add.v), foot: `回答 ${fmt(v.add.n)}` },
-    first: v.first?.v == null ? null : { main: pctText(v.first.v), foot: `回答 ${fmt(v.first.n)}` },
-    again: v.again?.v == null ? null : { main: pctText(v.again.v), foot: `5段階の上位2つ（回答 ${fmt(v.again.n)}）` },
+    sat: v.sat.v == null ? null : { main: pctText(v.sat.v), foot: `5段階の4と5の合計（回答 ${fmt(v.sat.n)}）`, dist: v.sat.dist },
+    add: v.add?.v == null ? null : { main: pctText(v.add.v), foot: `「利用しなかった」を選んだ割合（回答 ${fmt(v.add.n)}）`, dist: v.add.dist },
+    first: v.first?.v == null ? null : { main: pctText(v.first.v), foot: `「初めて」を選んだ割合（回答 ${fmt(v.first.n)}）`, dist: v.first.dist },
+    again: v.again?.v == null ? null : { main: pctText(v.again.v), foot: `5段階の4と5の合計（回答 ${fmt(v.again.n)}）`, dist: v.again.dist },
     spend: v.spend ? { main: yen(v.spend.v), foot: `回答の合計 ÷ 回答数（${fmt(v.spend.n)}）` } : null,
   };
   const tiles = ITEMS.filter((it) => it.key !== "where" && it.key !== "who" && value[it.key]);
@@ -68,18 +74,32 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
             : "e街の発行〜消し込みの記録と、使った直後のアンケートの結果。寄附企業のダッシュボードにも同じ数字が出る"
         }
         actions={
-          <Select items={items} value={projectId} onValueChange={(x) => x && setPid(x as string)}>
-            <SelectTrigger className="min-w-[260px] bg-card" aria-label="事業">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent alignItemWithTrigger={false}>
-              {items.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select items={items} value={projectId} onValueChange={(x) => x && (setPid(x as string), setCoupon("all"))}>
+              <SelectTrigger className="min-w-[220px] bg-card" aria-label="事業">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false}>
+                {items.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select items={couponItems} value={couponId ?? "all"} onValueChange={(x) => x && setCoupon(x as string)}>
+              <SelectTrigger className="min-w-[220px] bg-card" aria-label="クーポン">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false}>
+                {couponItems.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         }
       />
 
@@ -126,6 +146,7 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
                         </select>
                       )}
                       {x.foot}
+                      {x.dist && <Dist rows={x.dist} />}
                     </td>
                     {corp && (
                       <td className="px-5 py-2.5">
@@ -165,7 +186,7 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
       </div>
 
       <Section title={<span className="flex items-center gap-2">声 <SourceTag from="アンケート" /></span>} meta={<span className="text-xs text-muted-foreground">{corp ? "公開に同意した声だけ。属性はぼかして表示。「社内共有ページに出さない」にチェックした声は社員に見えない" : "不適切なものは「企業に出さない」にチェック。企業のダッシュボードと社内共有ページから消える"}</span>}>
-        <VoicesGrid c={c} projectIds={[projectId]} showGift mode={corp ? "corp" : "muni"} pageSize={6} />
+        <VoicesGrid c={c} projectIds={[projectId]} giftIds={couponId ? [couponId] : undefined} showGift mode={corp ? "corp" : "muni"} pageSize={6} />
       </Section>
     </div>
   );
@@ -206,5 +227,26 @@ function Bars({ rows, max, unit }: { rows: [string, number][]; max: number; unit
         </li>
       ))}
     </ul>
+  );
+}
+
+/** 設問の答えの分布（合計100%）。帯と数字で出す */
+function Dist({ rows }: { rows: { label: string; pct: number }[] }) {
+  const tones = ["bg-brand", "bg-brand/70", "bg-brand/45", "bg-brand/25", "bg-brand/12"];
+  return (
+    <div className="mt-1.5 max-w-md">
+      <div className="flex h-1.5 overflow-hidden rounded-full bg-muted">
+        {rows.map((r, i) => (
+          <span key={r.label} className={tones[i] ?? "bg-brand/10"} style={{ width: `${r.pct}%` }} />
+        ))}
+      </div>
+      <p className="mt-1 flex flex-wrap gap-x-2.5 text-[11px] tnum">
+        {rows.map((r) => (
+          <span key={r.label}>
+            {r.label} {pctText(r.pct)}
+          </span>
+        ))}
+      </p>
+    </div>
   );
 }

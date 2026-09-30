@@ -69,6 +69,16 @@ function compareOf(c: CaseData, raw: RawData, projectId: string, mode: CompareMo
   };
 }
 
+/** クーポン（券種）で絞った元データ。チケット → 利用 → アンケートの順にたどる。前年度実績は事業単位なので外す */
+export function rawForCoupon(raw: RawData, couponId: string | null): RawData {
+  if (!couponId) return raw;
+  const tickets = raw.tickets.filter((t) => t.couponTypeId === couponId);
+  const ids = new Set(tickets.map((t) => t.ticketId));
+  const redemptions = raw.redemptions.filter((r) => ids.has(r.ticketId));
+  const rids = new Set(redemptions.map((r) => r.redemptionId));
+  return { ...raw, tickets, redemptions, surveyResponses: raw.surveyResponses.filter((s) => rids.has(s.redemptionId)), baselines: [] };
+}
+
 export function itemValues(c: CaseData, raw: RawData, projectId: string, compareMode: CompareMode = "lastYear") {
   const hh = c.kind === "観光" ? "人" : "世帯";
   const { funnel, rows: whoRows } = analyze(c, raw, projectId, c.reg[0]?.key ?? "");
@@ -81,9 +91,16 @@ export function itemValues(c: CaseData, raw: RawData, projectId: string, compare
     .map((r) => ({ value: r.value, share: whoTotal ? Math.round((r.receivedHH / whoTotal) * 1000) / 10 : 0 }));
   const resp = raw.surveyResponses.filter((s) => s.projectId === projectId);
   const n = resp.length;
+  // 設問ごとの答えの分布（合計100%）。5段階は 5 → 1 の順
+  const dist = (q: string) => {
+    const def = c.questions.find((x) => x.id === q);
+    const vs = resp.map((r) => r.answers[q]).filter((v) => v !== undefined);
+    const labels = def?.type === "scale" ? ["5", "4", "3", "2", "1"] : (def?.opts ?? []);
+    return labels.map((l) => ({ label: l, pct: pct(vs.filter((v) => String(v) === l).length, vs.length) ?? 0 }));
+  };
   const share = (q: string, test: (v: unknown) => boolean) => {
     const vs = resp.map((r) => r.answers[q]).filter((v) => v !== undefined);
-    return { v: pct(vs.filter(test).length, vs.length), n: vs.length };
+    return { v: pct(vs.filter(test).length, vs.length), n: vs.length, dist: dist(q) };
   };
   const addQ = c.questions.find((q) => q.id === "add");
   const firstQ = c.questions.find((q) => q.id === "first" || q.id === "firstvisit");
