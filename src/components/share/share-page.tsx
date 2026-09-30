@@ -16,11 +16,12 @@ import { SharedNumbers } from "./shared-numbers";
 export function SharePage() {
   const c = useCase();
   const extra = useExtra();
+  const hiddenForShare = useApp((s) => s.hiddenForShare);
 
   // 支援している事業（寄附の割合で按分する考え方。数字は事業全体）
   const supports = useMemo(() => corpSupports(c, extra).filter((g) => g.base.status === "active"), [c, extra]);
   const pids = supports.map((g) => g.base.id);
-  const voices = c.voices.filter((v) => pids.includes(v.projectId) && !v.hidden).sort((a, b) => (b.postedAt ?? 0) - (a.postedAt ?? 0));
+  const voices = c.voices.filter((v) => pids.includes(v.projectId) && !v.hidden && !hiddenForShare[v.id]).sort((a, b) => (b.postedAt ?? 0) - (a.postedAt ?? 0));
   const reached = sum(supports.map((g) => projectTotals(g.project).received));
   const donated = sum(supports.map((g) => g.amount));
   const coupons = supports.flatMap((g) => g.coupons.map((d) => ({ d, base: g.base, t: projectTotals(giftProject(g.base, d, extra)) })));

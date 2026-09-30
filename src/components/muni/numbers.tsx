@@ -164,7 +164,7 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
         </Section>
       </div>
 
-      <Section title={<span className="flex items-center gap-2">声 <SourceTag from="アンケート" /></span>} meta={<span className="text-xs text-muted-foreground">{corp ? "公開に同意した声だけ。属性はぼかして表示。社内共有ページにも出る" : "不適切なものは「企業に出さない」にチェック。企業のダッシュボードと社内共有ページから消える"}</span>}>
+      <Section title={<span className="flex items-center gap-2">声 <SourceTag from="アンケート" /></span>} meta={<span className="text-xs text-muted-foreground">{corp ? "公開に同意した声だけ。属性はぼかして表示。「社内共有ページに出さない」にチェックした声は社員に見えない" : "不適切なものは「企業に出さない」にチェック。企業のダッシュボードと社内共有ページから消える"}</span>}>
         <VoicesGrid c={c} projectIds={[projectId]} showGift mode={corp ? "corp" : "muni"} pageSize={6} />
       </Section>
     </div>

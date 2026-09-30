@@ -56,6 +56,9 @@ type AppState = {
   /** 社内共有ページに公開する項目（寄附企業が選ぶ） */
   sharedItems: Record<string, boolean>;
   toggleSharedItem: (key: string) => void;
+  /** 寄附企業が「社内共有ページに出さない」にした声 */
+  hiddenForShare: Record<string, boolean>;
+  toggleHiddenForShare: (voiceId: string) => void;
   /** 比較の相手（既定は前年度の同じ期間） */
   compareMode: CompareMode;
   setCompareMode: (m: CompareMode) => void;
@@ -133,6 +136,8 @@ export const useApp = create<AppState>((set) => ({
   hiddenVoices: {},
   sharedItems: { ...DEFAULT_SHARED },
   toggleSharedItem: (key) => set((s) => ({ sharedItems: { ...s.sharedItems, [key]: !s.sharedItems[key] } })),
+  hiddenForShare: {},
+  toggleHiddenForShare: (id) => set((s) => ({ hiddenForShare: { ...s.hiddenForShare, [id]: !s.hiddenForShare[id] } })),
   compareMode: "lastYear",
   setCompareMode: (compareMode) => set({ compareMode }),
   seedNow: Date.now(),
@@ -300,7 +305,7 @@ export const useApp = create<AppState>((set) => ({
   removeRegField: (i) => set((s) => editCase(s, (c) => ({ ...c, reg: c.reg.filter((_, j) => j !== i) }))),
   reset: () => {
     const m = seed();
-    set({ cases: m, raw: seedRaw(m), hiddenVoices: {}, sharedItems: { ...DEFAULT_SHARED }, seedNow: Date.now(), extra: { matsumoto: {}, sapporo: {} }, liked: {}, flashVoiceId: null, corpGift: {}, muniGift: {}, muniProject: {}, ...phoneInit, useCount: 0 });
+    set({ cases: m, raw: seedRaw(m), hiddenVoices: {}, hiddenForShare: {}, sharedItems: { ...DEFAULT_SHARED }, seedNow: Date.now(), extra: { matsumoto: {}, sapporo: {} }, liked: {}, flashVoiceId: null, corpGift: {}, muniGift: {}, muniProject: {}, ...phoneInit, useCount: 0 });
   },
 }));
 

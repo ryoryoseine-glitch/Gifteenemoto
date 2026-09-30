@@ -32,6 +32,8 @@ export function VoicesGrid({
 }) {
   const toggleHidden = useApp((s) => s.toggleVoiceHidden);
   const raw = useApp((s) => s.raw[s.caseId]);
+  const hiddenForShare = useApp((s) => s.hiddenForShare);
+  const toggleForShare = useApp((s) => s.toggleHiddenForShare);
   const flashId = useApp((s) => s.flashVoiceId);
   const [theme, setTheme] = useState<string | null>(null);
   const [more, setMore] = useState(false);
@@ -112,7 +114,7 @@ export function VoicesGrid({
                 className={cn(
                   "grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 gap-y-2 px-4 py-3.5 md:grid-cols-[auto_12rem_minmax(0,1fr)_auto]",
                   flashId === v.id && "flash-in",
-                  v.hidden && "opacity-55",
+                  (v.hidden || (mode === "corp" && hiddenForShare[v.id])) && "opacity-55",
                 )}
               >
                 <PersonAvatar seed={v.id} withChild={c.id === "matsumoto"} />
@@ -147,6 +149,12 @@ export function VoicesGrid({
                     );
                   })()}
                 </div>
+                {mode === "corp" && (
+                  <label className="col-span-2 inline-flex cursor-pointer items-center gap-1.5 justify-self-end text-xs text-muted-foreground md:col-span-1">
+                    <input id={`share-hide-${v.id}`} type="checkbox" checked={!!hiddenForShare[v.id]} onChange={() => toggleForShare(v.id)} className="size-4 accent-[var(--brand)]" />
+                    社内共有ページに出さない
+                  </label>
+                )}
                 {mode === "muni" && (
                   <label className="col-span-2 inline-flex cursor-pointer items-center gap-1.5 justify-self-end text-xs text-muted-foreground md:col-span-1">
                     <input id={`hide-${v.id}`} type="checkbox" checked={!!v.hidden} onChange={() => toggleHidden(v.id)} className="size-4 accent-[var(--brand)]" />
