@@ -53,7 +53,7 @@ type AppState = {
   raw: Record<CaseId, RawData>;
   setRaw: (r: RawData) => void;
   hiddenVoices: Record<string, boolean>;
-  /** 社内共有ページに出す項目（自治体が選ぶ） */
+  /** 社内共有ページに公開する項目（自治体が選ぶ） */
   sharedItems: Record<string, boolean>;
   toggleSharedItem: (key: string) => void;
   seedNow: number;

@@ -19,7 +19,8 @@ const ROLES = [
   { href: "/", label: "提案の要点", sub: "" },
   { href: "/phone", label: "受け取る人", sub: "アンケート" },
   { href: "/muni/numbers", label: "自治体", sub: "数字・報告書" },
-  { href: "/share", label: "寄附企業", sub: "社内共有ページ" },
+  { href: "/corp", label: "寄附企業", sub: "ダッシュボード" },
+  { href: "/share", label: "社内共有", sub: "社員" },
 ];
 
 export function TopBar() {

@@ -62,7 +62,7 @@ export default function Home() {
                 <Link href="/muni/numbers" className="font-bold text-link hover:underline">
                   数字と声
                 </Link>
-                （Survey のダッシュボードを流用。社内共有ページに出す項目を選ぶ）、
+                （Survey のダッシュボードを流用。社内共有ページに公開する項目を選ぶ）、
                 <Link href="/muni/report" className="font-bold text-link hover:underline">
                   報告書の Word 出力
                 </Link>
@@ -72,6 +72,10 @@ export default function Home() {
               <td className="px-5 py-3 font-medium whitespace-nowrap">寄附企業</td>
               <td className="px-3 py-3 text-muted-foreground">受領証、事業費の確定報告</td>
               <td className="px-5 py-3">
+                <Link href="/corp" className="font-bold text-link hover:underline">
+                  ダッシュボード
+                </Link>
+                （自治体と同じ数字と声）、
                 <Link href="/share" className="font-bold text-link hover:underline">
                   社内共有ページ
                 </Link>
