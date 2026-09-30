@@ -104,7 +104,7 @@ export function Numbers() {
         </table>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5">
         <Section title={<span className="flex items-center gap-2">誰に届いたか <SourceTag from="e街の記録" /></span>} meta={<ShareToggle on={!!shared.who} onClick={() => toggle("who")} compact />} bodyClassName="p-0">
           <div className="flex flex-wrap gap-1.5 border-b px-5 py-2.5">
             {attrs.map((a) => (
@@ -151,7 +151,7 @@ function ShareToggle({ on, onClick, compact, label = "社内共有ページに�
       className={cn("inline-flex items-center gap-1.5 self-start text-xs", !compact && "mt-3 border-t pt-2.5 self-stretch", on ? "font-bold text-brand" : "text-muted-foreground")}
     >
       <span className={cn("grid size-4 place-items-center rounded border", on ? "border-brand bg-brand text-white" : "border-muted-foreground/50")}>{on && <Check className="size-3" />}</span>
-      社内共有ページに出す
+      {label}
     </button>
   );
 }
@@ -160,7 +160,7 @@ function Bars({ rows, max, unit }: { rows: [string, number][]; max: number; unit
   return (
     <ul className="space-y-1.5 px-5 py-3 text-[13px]">
       {rows.map(([k, n]) => (
-        <li key={k} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-3">
+        <li key={k} className="grid grid-cols-[minmax(0,14rem)_1fr_6rem] items-center gap-4">
           <span className="truncate">{k}</span>
           <span className="h-2 rounded-full bg-brand/70" style={{ width: `${Math.max(2, (n / max) * 100)}%` }} />
           <span className="text-right tnum text-muted-foreground">
