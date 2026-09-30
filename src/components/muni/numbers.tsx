@@ -14,7 +14,7 @@ import { PageHeader, Section } from "@/components/shell/parts";
 import { VoicesGrid } from "@/components/insight/voices-grid";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-/** 自治体：決めた項目の数字と声（giftee Survey のダッシュボードを流用する想定）。企業のダッシュボード（mode="corp"）では、項目ごとに社内共有ページに公開するかを選ぶ */
+/** 自治体：決めた項目の利用実績とアンケート結果（giftee Survey のダッシュボードを流用する想定）。企業のダッシュボード（mode="corp"）では、項目ごとに社内共有ページに公開するかを選ぶ */
 export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
   const c = useCase();
   const corp = mode === "corp";
@@ -71,7 +71,7 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
     <div className="space-y-5">
       <PageHeader
         eyebrow={corp ? `${c.corp.name}` : `${c.muni}・giftee Survey のダッシュボードを流用する想定`}
-        title={corp ? "寄附した事業の数字と声" : "数字と声"}
+        title={corp ? "寄附先事業の利用実績・アンケート結果" : "利用実績・アンケート結果"}
         sub={
           corp
             ? `${c.muni}のクーポン全体の数字。チェックした項目を社内共有ページに公開`
@@ -195,7 +195,7 @@ export function Numbers({ mode = "muni" }: { mode?: "muni" | "corp" }) {
         </Section>
       </div>
 
-      <Section title={<span className="flex items-center gap-2">声 <SourceTag from="アンケート" /></span>} meta={<span className="text-xs text-muted-foreground">{corp ? "公開に同意した声だけ。属性はぼかして表示。「社内共有ページに出さない」にチェックした声は社員に見えない" : "不適切なものは「企業に出さない」にチェック。企業のダッシュボードと社内共有ページから消える"}</span>}>
+      <Section title={<span className="flex items-center gap-2">自由記述の回答 <SourceTag from="アンケート" /></span>} meta={<span className="text-xs text-muted-foreground">{corp ? "公開に同意した声だけ。属性はぼかして表示。「社内共有ページに出さない」にチェックした声は社員に見えない" : "不適切なものは「企業に出さない」にチェック。企業のダッシュボードと社内共有ページから消える"}</span>}>
         <VoicesGrid c={c} projectIds={all ? projects.map((p) => p.id) : [projectId]} showGift mode={corp ? "corp" : "muni"} pageSize={6} />
       </Section>
     </div>

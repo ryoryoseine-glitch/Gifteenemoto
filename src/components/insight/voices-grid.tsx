@@ -64,7 +64,7 @@ export function VoicesGrid({
     <section>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 text-sm font-bold">
-          受け取った人の声
+          公開に同意した回答
           <span className="font-normal text-muted-foreground tnum">
             {voices.length}件{mode === "muni" && hiddenCount > 0 && `（うち非表示 ${hiddenCount}件）`}
           </span>

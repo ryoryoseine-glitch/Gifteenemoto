@@ -100,7 +100,7 @@ export function ExistingDashboard() {
           ))}
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          アンケートに答えた利用は「数字と声」の声の欄に、同じ会員ID・チケットIDで出る。答えなかった利用は、この明細で見る想定。
+          アンケートに答えた利用は「利用実績・アンケート結果」の自由記述の欄に、同じ会員ID・チケットIDで出る。答えなかった利用は、この明細で見る想定。
         </p>
       </Section>
     </div>

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useCase } from "@/store/useApp";
 
 const ITEMS = [
-  { href: "/muni/numbers", label: "数字と声", icon: BarChart3 },
+  { href: "/muni/numbers", label: "利用実績・アンケート結果", icon: BarChart3 },
   { href: "/muni/report", label: "報告書（Word）", icon: FileText },
 ];
 
